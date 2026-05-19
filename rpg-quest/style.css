@@ -1,0 +1,222 @@
+/* ========== ГЛОБАЛЬНЫЙ СБРОС (RESET) ========== */
+* {
+    margin: 0;          /* Убираем отступы у всех элементов */
+    padding: 0;         /* Убираем внутренние отступы у всех элементов */
+    box-sizing: border-box;  /* Ширина элемента включает padding и border */
+                              /* Без этого padding добавлял бы лишние пиксели */
+}
+
+/* ========== СТИЛИ ДЛЯ ВСЕЙ СТРАНИЦЫ ========== */
+body {
+    font-family: system-ui, -apple-system, sans-serif;  /* Системный шрифт ОС */
+                                                        /* Не нужно подключать внешние шрифты */
+    min-height: 100vh;      /* Минимальная высота = весь экран (viewport height) */
+                            /* vh — relative unit (1vh = 1% от высоты экрана) */
+    
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            /* Градиент: идёт от сиреневого к фиолетовому */
+                            /* 135deg — угол наклона (слева-снизу вправо-вверх) */
+                            /* 0% и 100% — точки начала и конца градиента */
+    
+    display: flex;          /* Включаем Flexbox — современный способ раскладки */
+    justify-content: center; /* Центрируем дочерний элемент по горизонтали */
+    align-items: center;     /* Центрируем дочерний элемент по вертикали */
+}
+
+/* ========== КАРТОЧКА ГАЛЕРЕИ ========== */
+.gallery {
+    background: white;      /* Белый фон карточки (контраст с фиолетовым фоном body) */
+    border-radius: 24px;    /* Скругление углов (чем больше, тем круглее) */
+    padding: 30px;          /* Внутренние отступы — воздух внутри карточки */
+    text-align: center;     /* Весь текст внутри по центру */
+    
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    /* Тень:
+       0px — смещение по X
+       20px — смещение по Y (вниз)
+       40px — размытие (чем больше, тем мягче)
+       rgba(0,0,0,0.2) — чёрный с прозрачностью 20% */
+    
+    width: 500px;           /* Фиксированная ширина карточки */
+                            /* На мобилках можно сделать width: 90% через media query */
+}
+
+/* ========== ЗАГОЛОВОК ========== */
+h1 {
+    color: #333;            /* Тёмно-серый (почти чёрный, но мягче) */
+    margin-bottom: 20px;    /* Отступ снизу — расстояние до следующего элемента */
+    font-size: 24px;        /* Размер шрифта (можно rem или px) */
+}
+
+/* ========== КОНТЕЙНЕР ДЛЯ КАРТИНКИ ========== */
+.image-container {
+    margin-bottom: 20px;    /* Отступ снизу до кнопок */
+}
+
+/* ========== САМА КАРТИНКА ========== */
+#mainImage {
+    width: 100%;            /* Растягивается на всю ширину родителя (.gallery) */
+    height: 350px;          /* Фиксированная высота — все картинки одного размера */
+    
+    object-fit: cover;      /* Как картинка вписывается в блок:
+                               cover — заполняет весь блок, обрезая лишнее по краям
+                               contain — показывает целиком, но оставляет пустые полосы */
+    
+    border-radius: 16px;    /* Скругление углов у картинки */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);  /* Лёгкая тень для глубины */
+    
+    background: #f0f0f0;    /* Серый фон, пока картинка грузится или сломалась */
+}
+
+/* ========== БЛОК С КНОПКАМИ ========== */
+.controls {
+    display: flex;          /* Кнопки в ряд */
+    justify-content: center; /* По центру горизонтально */
+    align-items: center;     /* По центру вертикально (на случай разной высоты) */
+    gap: 20px;              /* Расстояние МЕЖДУ кнопками (современный способ) */
+                            /* Раньше использовали margin-left + :first-child */
+}
+
+/* ========== КНОПКИ ========== */
+button {
+    background: #667eea;    /* Тот же цвет, что у градиента (стилистически единообразно) */
+    color: white;           /* Белый текст на сиреневом фоне — контрастно */
+    border: none;           /* Убираем стандартную рамку браузера */
+    
+    padding: 10px 24px;     /* Внутренние отступы:
+                               10px — сверху/снизу (вертикаль)
+                               24px — слева/справа (горизонталь) */
+    
+    border-radius: 30px;    /* Сильное скругление — получаются "таблетки" (pill) */
+    font-size: 16px;        /* Размер текста на кнопке */
+    
+    cursor: pointer;        /* Меняем курсор на руку с пальцем (указывает, что кликабельно) */
+    transition: 0.2s;       /* Анимация при наведении длительностью 0.2 секунды */
+                            /* transition: all 0.2s ease; — полная запись */
+}
+
+/* ========== КНОПКИ ПРИ НАВЕДЕНИИ МЫШИ ========== */
+button:hover {
+    background: #5a67d8;    /* Чуть темнее, чем базовый цвет — эффект нажатия */
+    transform: scale(1.02); /* Увеличиваем кнопку на 2% — живая обратная связь */
+                            /* ВАЖНО: transition в button делает этот эффект плавным */
+}
+
+/* ========== СЧЁТЧИК (1 / 5) ========== */
+#counter {
+    font-size: 16px;        /* Тот же размер, что у текста на кнопках */
+    color: #555;            /* Серый (мягче, чем чёрный) */
+    font-weight: 500;       /* Жирность: 400 = нормальный, 700 = bold, 500 = средний */
+}
+
+/* Для планшетов и телефонов — карточка становится шире */
+@media (max-width: 600px) {
+    .gallery {
+        width: 95%;         /* Не фиксированная, а 95% от ширины экрана */
+        padding: 20px;      /* Меньше отступов на маленьких экранах */
+    }
+    
+    #mainImage {
+        height: 250px;      /* Меньше высота — экономия места */
+    }
+    
+    button {
+        padding: 8px 18px;  /* Чуть меньше кнопки */
+    }
+
+}
+
+/* ===== КНОПКА ВЫБОРА ===== */
+#selectBtn {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+#selectBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #45a049, #3e8e41);
+    transform: scale(1.02);
+}
+
+#selectBtn:disabled {
+    background: #9e9e9e;
+    transform: none;
+}
+
+/* ===== КНОПКА СТАРТ ===== */
+#startBtn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+}
+
+#startBtn:hover {
+    background: linear-gradient(135deg, #ee5a24, #dd4a14);
+    transform: scale(1.02);
+}
+
+/* ===== КОНТЕЙНЕР КНОПОК (в ряд) ===== */
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ===== CANVAS КОНТЕЙНЕР (скрыт по умолчанию) ===== */
+.canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+#gameCanvas {
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+}
+
+/* ===== ЗАКРЫТИЕ ПО КЛИКУ (подсказка) ===== */
+.canvas-container::after {
+    content: "✖ Нажмите на фон, чтобы закрыть";
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0,0,0,0.6);
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-family: system-ui;
+    pointer-events: none;
+}
+
+/* ===== АДАПТИВ ДЛЯ МОБИЛЬНЫХ ===== */
+@media (max-width: 600px) {
+    .controls {
+        gap: 8px;
+    }
+    
+    button {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+    
+    #selectBtn, #startBtn {
+        font-size: 13px;
+    }
+    
+    .canvas-container::after {
+        font-size: 11px;
+        bottom: 15px;
+    }
+}
