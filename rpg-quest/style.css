@@ -1,0 +1,31 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    color: aliceblue;
+    max-height: 100vh;
+    background: linear-gradient(#8334eb, #d61ed0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.gallery{
+    text-align: center;
+    background: linear-gradient(#383838, #121212);
+    border-radius: 10px;
+    box-shadow: #262525 8px 8px 5px;
+    height: 60vh;
+    width: 500px;
+    gap: 40px;
+}
+
+.container > img {
+    width: 400px;
+    height: 400px;
+    
+}
