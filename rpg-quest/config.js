@@ -14,6 +14,7 @@ const GALLERY_CONFIG = {
         'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/archer.png',
         'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/barbarian_m.png',
         'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/witches.png',
+        'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/knight.png',
         'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/warrior.png',
         'https://github.com/Gabryelf/Atlas-Assets/raw/main/docs/images/fantasy/elementalist.png'
     ]

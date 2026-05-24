@@ -11,7 +11,6 @@ const ctx = gameCanvas.getContext('2d');
 
 // ========== ПЕРЕМЕННЫЕ ==========
 const portraits = GALLERY_CONFIG.portraits;
-const fullbodySprites = GALLERY_CONFIG.fullbody;
 let currentIndex = 0;
 let selectedIndex = null;
 
@@ -29,11 +28,15 @@ function updateSelectButtonState() {
         selectBtn.disabled = true;
         selectBtn.style.opacity = '0.6';
         selectBtn.style.cursor = 'default';
+        startBtn.dissabled = true;
+        startBtn.style.opacity = '1';
     } else {
         selectBtn.textContent = 'Выбрать';
         selectBtn.disabled = false;
         selectBtn.style.opacity = '1';
         selectBtn.style.cursor = 'pointer';
+        startBtn.dissabled = false;
+        startBtn.style.opacity = '0.3';
     }
 }
 
@@ -48,15 +51,49 @@ function prevImage() {
     updateImage();
 }
 
+function selectHero(){
+    localStorage.setItem('selectHero', currentIndex);
+    selectedIndex = currentIndex;
+    updateSelectButtonState();
+}
+
+function loadData(){
+    key = localStorage.getItem('selectHero');
+    if(key){
+        currentIndex = parseInt(key);
+    }
+}
+
+function showCanvas(){
+    canvasContainer.style.display = 'flex';
+    gameCanvas.style.display = 'flex';
+    gameCanvas.style.width = '100vw';  //window.width;
+    gameCanvas.style.height = '100vh'; //window.height;
+
+    Game.init(ctx, currentIndex);
+}
+
+function hideCanvas(){
+    canvasContainer.style.display = 'none';
+    gameCanvas.style.display = 'none';
+}
+
 // ========== СОБЫТИЯ КНОПОК ==========
 prevBtn.addEventListener('click', prevImage);
 nextBtn.addEventListener('click', nextImage);
+selectBtn.addEventListener('click', selectHero);
+startBtn.addEventListener('click', showCanvas);
 
 // Клавиши навигации
 document.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') prevImage();
     else if (event.key === 'ArrowRight') nextImage();
+    if(event.key === 'Escape'){
+        hideCanvas();
+    }
 })
 
 // ========== ЗАПУСК ==========
+hideCanvas();
+loadData();
 updateImage();

@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 body {
@@ -19,13 +20,32 @@ body {
     background: linear-gradient(#383838, #121212);
     border-radius: 10px;
     box-shadow: #262525 8px 8px 5px;
-    height: 60vh;
+    height: 90vh;
     width: 500px;
     gap: 40px;
 }
 
 .container > img {
     width: 400px;
-    height: 400px;
-    
+    height: 400px;  
+}
+
+#counter{
+    width: 60px;
+    height: 60px;
+    border-radius: 5px;
+    background-color: #121212;
+}
+
+.canvas-container{
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+#gameCanvas{
+    position: fixed;
+    background: #000000;
+    z-index: 200;
 }
