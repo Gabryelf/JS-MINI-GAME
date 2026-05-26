@@ -67,10 +67,11 @@ function loadData(){
 function showCanvas(){
     canvasContainer.style.display = 'flex';
     gameCanvas.style.display = 'flex';
-    gameCanvas.style.width = '100vw';  //window.width;
-    gameCanvas.style.height = '100vh'; //window.height;
+   
+    gameCanvas.width = window.innerWidth;
+    gameCanvas.height = window.innerHeight;
 
-    Game.init(ctx, currentIndex);
+    window.Game.init(ctx, currentIndex, gameCanvas.width, gameCanvas.height);
 }
 
 function hideCanvas(){
@@ -92,6 +93,15 @@ document.addEventListener('keydown', (event) => {
         hideCanvas();
     }
 })
+
+window.addEventListener('resize', () => {
+    if (canvasContainer.style.display === 'flex') {
+        gameCanvas.width = window.innerWidth;
+        gameCanvas.height = window.innerHeight;
+        window.Game.mapWidth = gameCanvas.width;
+        window.Game.mapHeight = gameCanvas.height;
+    }
+});
 
 // ========== ЗАПУСК ==========
 hideCanvas();
