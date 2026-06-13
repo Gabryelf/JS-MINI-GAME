@@ -1,0 +1,44 @@
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.deck{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30vw;
+    height: 90vh;
+}
+
+.card{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    height: 50%;
+    background-color: darkslategray;
+    border-radius: 6px;
+}
+
+.half-card{
+    display: flex;
+    width: 98%;
+    height: 49%;
+    background-color: antiquewhite;
+    border-radius: 3px;
+}
+
+.title-card {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.title-card{
+    margin: 5px;
+}
+
+#bottom-card{
+    transform: rotate(180deg);
+}
