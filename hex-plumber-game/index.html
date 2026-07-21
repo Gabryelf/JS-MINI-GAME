@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hex Plumber - Водопроводчик</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Контейнер для Яндекс SDK -->
+    <div id="yandex-sdk-container"></div>
+    
+    <!-- Игровой контейнер -->
+    <div id="game-container">
+        <!-- Хедер -->
+        <header id="game-header">
+            <div class="header-left">
+                <div class="stat-item">
+                    <span class="icon icon-drop"></span>
+                    <span id="flood-level">0</span>
+                </div>
+                <div class="stat-item progress-container">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <span id="progress-text">0%</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="stat-item">
+                    <span class="icon icon-wrench"></span>
+                    <span id="tools-count">1</span>
+                </div>
+                <button class="icon-btn" id="settings-btn">
+                    <span class="icon icon-settings"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Игровое поле -->
+        <div id="game-board">
+            <canvas id="board-canvas"></canvas>
+        </div>
+
+        <!-- Футер с картами -->
+        <footer id="game-footer">
+            <div id="cards-container">
+                <!-- Карты генерируются динамически -->
+            </div>
+            <button class="icon-btn" id="rotate-btn">
+                <span class="icon icon-rotate"></span>
+            </button>
+        </footer>
+    </div>
+
+    <!-- Подключаем скрипты -->
+    <script src="js/utils/Helpers.js"></script>
+    <script src="js/sdk/YandexSDK.js"></script>
+    <script src="js/core/Hex.js"></script>
+    <script src="js/core/Deck.js"></script>
+    <script src="js/core/Board.js"></script>
+    <script src="js/core/Level.js"></script>
+    <script src="js/ui/BoardRenderer.js"></script>
+    <script src="js/ui/HeaderUI.js"></script>
+    <script src="js/ui/FooterUI.js"></script>
+    <script src="js/ui/GameUI.js"></script>
+    <script src="js/core/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
