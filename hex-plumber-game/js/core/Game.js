@@ -136,7 +136,13 @@ window.Game = (function() {
         _gameOver() {
             console.log('[Game] Игра окончена!');
             this.isRunning = false;
+            
+            // Удаляем старые оверлеи
+            const oldOverlay = document.querySelector('.game-over-overlay');
+            if (oldOverlay) oldOverlay.remove();
+            
             const overlay = document.createElement('div');
+            overlay.className = 'game-over-overlay';
             overlay.style.cssText = `
                 position: fixed; top: 0; left: 0; right: 0; bottom: 0;
                 background: rgba(0, 0, 0, 0.8); display: flex;
@@ -167,14 +173,35 @@ window.Game = (function() {
         }
 
         restartLevel() {
-            console.log('[Game] Перезапуск уровня');
+            console.log('[Game] Перезапуск уровня', this.currentLevel);
             this.isRunning = false;
+            
+            // Полностью уничтожаем старый UI и рендерер
+            if (this.ui) {
+                if (this.ui.boardRenderer) {
+                    this.ui.boardRenderer.destroy();
+                }
+                this.ui = null;
+            }
+            
+            // Создаем новый UI
+            this.ui = new GameUI();
+            
+            // Создаем новый уровень с теми же параметрами
             this.level = Level.createLevel(this.currentLevel);
+            
+            // Создаем новую доску
             this.board = new Board({ radius: this.level.boardRadius, hexSize: 40 });
+            
+            // Добавляем стартовые гексы
             this.level.startCoords.forEach(([x, y]) => this.board.addStartHex(x, y));
+            
+            // Добавляем заблокированные гексы
             if (this.level.blockedCoords) {
                 this.board.blockHexes(this.level.blockedCoords);
             }
+            
+            // Создаем новую колоду
             this.deck = new Deck({
                 cardTemplates: this.level.cardTemplates || [
                     { outputs: 1, edges: [[0]] },
@@ -186,15 +213,38 @@ window.Game = (function() {
                 ],
                 baseHandSize: this.level.baseHandSize || 3
             });
-            this.ui.reset();
+            
+            // Инициализируем UI с новыми объектами
             this.ui.init(this.board, this.deck);
+            this.ui.onCardPlace = (x, y, card) => this._placeCard(x, y, card);
+            this.ui.onCardRotate = (index) => this._rotateCard(index);
             this.ui.setTools(this.tools);
-            setTimeout(() => this.ui.update(this.board, this.deck), 50);
+            
+            // Принудительно обновляем UI
+            setTimeout(() => {
+                this.ui.update(this.board, this.deck);
+            }, 50);
+            
             this.isRunning = true;
+            console.log('[Game] Уровень', this.currentLevel, 'перезапущен');
         }
 
         nextLevel() {
             console.log('[Game] Следующий уровень');
+            this.isRunning = false;
+            
+            // Полностью уничтожаем старый UI и рендерер
+            if (this.ui) {
+                if (this.ui.boardRenderer) {
+                    this.ui.boardRenderer.destroy();
+                }
+                this.ui = null;
+            }
+            
+            // Создаем новый UI
+            this.ui = new GameUI();
+            
+            // Создаем новый уровень
             this.level = Level.createLevel(this.currentLevel);
             this.board = new Board({ radius: this.level.boardRadius, hexSize: 40 });
             this.level.startCoords.forEach(([x, y]) => this.board.addStartHex(x, y));
@@ -212,11 +262,18 @@ window.Game = (function() {
                 ],
                 baseHandSize: this.level.baseHandSize || 3
             });
-            this.ui.reset();
+            
             this.ui.init(this.board, this.deck);
+            this.ui.onCardPlace = (x, y, card) => this._placeCard(x, y, card);
+            this.ui.onCardRotate = (index) => this._rotateCard(index);
             this.ui.setTools(this.tools);
-            setTimeout(() => this.ui.update(this.board, this.deck), 50);
+            
+            setTimeout(() => {
+                this.ui.update(this.board, this.deck);
+            }, 50);
+            
             this.isRunning = true;
+            console.log('[Game] Запущен уровень', this.currentLevel);
         }
 
         useBooster() {

@@ -1,8 +1,5 @@
-/**
- * Главный UI контроллер
- * @namespace GameUI
- */
- window.GameUI = (function() {
+// ===== ui/GameUI.js =====
+window.GameUI = (function() {
     'use strict';
 
     class GameUI {
@@ -22,7 +19,6 @@
             this.footer.onRotate = (index) => {
                 if (this.onCardRotate && index >= 0) {
                     this.onCardRotate(index);
-                    // Обновляем предпросмотр после поворота
                     const card = this.footer.getSelectedCard();
                     if (this.boardRenderer) {
                         this.boardRenderer.setSelectedCard(card);
@@ -34,14 +30,26 @@
         init(board, deck) {
             const canvas = document.getElementById('board-canvas');
             if (canvas) {
-                this.boardRenderer = new BoardRenderer(canvas, board);
+                if (this.boardRenderer) {
+                    // Полный сброс существующего рендерера
+                    this.boardRenderer.fullReset();
+                    // Обновляем ссылку на доску
+                    this.boardRenderer.board = board;
+                    this.boardRenderer._setupCanvas();
+                    this.boardRenderer._centerCamera();
+                } else {
+                    this.boardRenderer = new BoardRenderer(canvas, board);
+                }
                 this.boardRenderer.onHexClick = (hex) => {
                     this._handleHexClick(hex);
                 };
             }
 
             this.footer.setDeck(deck);
-            this.update(board, deck);
+            // Принудительное обновление
+            setTimeout(() => {
+                this.update(board, deck);
+            }, 50);
         }
 
         _handleHexClick(hex) {
@@ -51,7 +59,6 @@
             const card = this.footer.getSelectedCard();
             if (!card) return;
 
-            // Проверяем через BoardRenderer - он уже содержит актуальный список доступных клеток
             if (this.boardRenderer) {
                 const isAvailable = this.boardRenderer.availableCellsForCard.some(
                     h => h.x === hex.x && h.y === hex.y
@@ -75,7 +82,6 @@
 
             if (deck) {
                 this.footer.render();
-                // Обновляем предпросмотр после обновления колоды
                 const card = this.footer.getSelectedCard();
                 if (this.boardRenderer) {
                     this.boardRenderer.setSelectedCard(card);
@@ -92,7 +98,10 @@
         }
 
         _showLevelComplete() {
+            if (document.querySelector('.level-complete-overlay')) return;
+            
             const overlay = document.createElement('div');
+            overlay.className = 'level-complete-overlay';
             overlay.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -165,7 +174,7 @@
             this.header.reset();
             this.footer.reset();
             if (this.boardRenderer) {
-                this.boardRenderer.render();
+                this.boardRenderer.fullReset();
             }
         }
 

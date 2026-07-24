@@ -22,6 +22,8 @@ window.Board = (function() {
             this.startHexes = [];
             this.placedHexes = [];
             this.blockedCoords.clear();
+            this.cameraX = 0;
+            this.cameraY = 0;
 
             for (let q = -this.radius; q <= this.radius; q++) {
                 for (let r = -this.radius; r <= this.radius; r++) {
@@ -292,6 +294,23 @@ window.Board = (function() {
         setCamera(x, y) {
             this.cameraX = x;
             this.cameraY = y;
+        }
+
+         // метод полной очистки
+         clear() {
+            this.hexes.clear();
+            this.startHexes = [];
+            this.placedHexes = [];
+            this.blockedCoords.clear();
+            this.cameraX = 0;
+            this.cameraY = 0;
+            this.isLocked = false;
+        }
+
+        // Полный сброс с инициализацией
+        fullReset() {
+            this.clear();
+            this._initBoard();
         }
     }
 
