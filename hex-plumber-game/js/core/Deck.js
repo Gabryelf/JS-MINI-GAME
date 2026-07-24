@@ -12,15 +12,17 @@
         /**
          * @param {Object} params
          * @param {number[]} params.cardConfigs - Массив конфигураций карт (количество выходов)
-         * @param {number} params.baseOutputCount - Базовое количество карт в руке
+         * @param {number} params.baseHandSize - Базовое количество карт в руке
          */
         constructor(params = {}) {
-            this.cardConfigs = params.cardConfigs || [2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3];
+            this.cardConfigs = params.cardConfigs || [2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4];
             this.baseHandSize = params.baseHandSize || 3;
-            this.hand = []; // Карты в руке (массив Hex)
-            this.discardPile = []; // Сброс
-            this.allCards = []; // Все карты в игре (для колоды)
+            this.hand = [];
+            this.discardPile = [];
+            this.allCards = [];
             this._initDeck();
+            // НЕМЕДЛЕННО заполняем руку
+            this.refillHand();
         }
 
         /**
@@ -31,9 +33,10 @@
             // Создаем карты на основе конфигурации
             this.cardConfigs.forEach((outputCount, index) => {
                 const hex = Hex.createRandom(0, 0, outputCount);
-                hex.id = 'card_' + index + '_' + Date.now();
+                hex.id = 'card_' + index + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
                 this.allCards.push(hex);
             });
+            console.log('[Deck] Создано карт в колоде:', this.allCards.length);
             this.shuffleDeck();
         }
 
@@ -48,23 +51,41 @@
          * Заполнение руки до базового размера
          */
         refillHand() {
+            console.log('[Deck] Заполнение руки. Текущий размер:', this.hand.length, 'Цель:', this.baseHandSize);
+            
+            // Если карт в колоде нет, но есть сброс - перетасовываем
+            if (this.allCards.length === 0 && this.discardPile.length > 0) {
+                this._reshuffleDiscard();
+            }
+
+            // Заполняем руку
+            let added = 0;
             while (this.hand.length < this.baseHandSize && this.allCards.length > 0) {
                 const card = this.allCards.pop();
                 if (card) {
+                    // Сбрасываем координаты для карт в руке
+                    card.x = 0;
+                    card.y = 0;
+                    card.isPlaced = false;
                     this.hand.push(card);
+                    added++;
                 }
             }
 
-            // Если колода пуста, перетасовываем сброс
-            if (this.allCards.length === 0 && this.hand.length < this.baseHandSize) {
-                this._reshuffleDiscard();
-                // Повторная попытка
-                while (this.hand.length < this.baseHandSize && this.allCards.length > 0) {
-                    const card = this.allCards.pop();
-                    if (card) {
-                        this.hand.push(card);
-                    }
+            console.log('[Deck] Добавлено карт в руку:', added, 'Всего в руке:', this.hand.length);
+            console.log('[Deck] Осталось в колоде:', this.allCards.length);
+            console.log('[Deck] В сбросе:', this.discardPile.length);
+
+            // Если рука все еще пуста, создаем аварийные карты
+            if (this.hand.length === 0) {
+                console.warn('[Deck] Рука пуста! Создаем аварийные карты...');
+                for (let i = 0; i < this.baseHandSize; i++) {
+                    const outputCount = 2 + Math.floor(Math.random() * 3);
+                    const card = Hex.createRandom(0, 0, outputCount);
+                    card.id = 'emergency_' + Date.now() + '_' + i;
+                    this.hand.push(card);
                 }
+                console.log('[Deck] Создано аварийных карт:', this.hand.length);
             }
 
             return this.hand.length;
@@ -74,6 +95,7 @@
          * Перетасовка сброса в колоду
          */
         _reshuffleDiscard() {
+            console.log('[Deck] Перетасовка сброса в колоду. Сброс содержит:', this.discardPile.length, 'карт');
             this.allCards = [...this.discardPile];
             this.discardPile = [];
             this.shuffleDeck();
@@ -84,15 +106,23 @@
          */
         useCard(cardIndex) {
             if (cardIndex < 0 || cardIndex >= this.hand.length) {
+                console.warn('[Deck] Неверный индекс карты:', cardIndex);
                 return null;
             }
+            
             const card = this.hand[cardIndex];
+            console.log('[Deck] Использование карты:', card.id, 'Индекс:', cardIndex);
+            
             // Удаляем из руки
             this.hand.splice(cardIndex, 1);
-            // Отправляем в сброс (позже может быть перетасована)
+            // Отправляем в сброс
             this.discardPile.push(card);
+            
+            console.log('[Deck] Карта отправлена в сброс. Теперь в сбросе:', this.discardPile.length);
+            
             // Пополняем руку
             this.refillHand();
+            
             return card;
         }
 
@@ -101,10 +131,12 @@
          */
         rotateHandCard(cardIndex, steps = 1) {
             if (cardIndex < 0 || cardIndex >= this.hand.length) {
+                console.warn('[Deck] Неверный индекс для поворота:', cardIndex);
                 return false;
             }
             const card = this.hand[cardIndex];
             card.rotate(steps);
+            console.log('[Deck] Карта повернута:', card.id, 'Новый поворот:', card.rotation);
             return true;
         }
 
@@ -133,6 +165,7 @@
          * Сброс колоды
          */
         reset() {
+            console.log('[Deck] Сброс колоды');
             this.hand = [];
             this.discardPile = [];
             this._initDeck();
@@ -144,31 +177,50 @@
          */
         swapCard(cardIndex) {
             if (cardIndex < 0 || cardIndex >= this.hand.length) {
+                console.warn('[Deck] Неверный индекс для замены:', cardIndex);
                 return null;
             }
 
             const oldCard = this.hand[cardIndex];
+            console.log('[Deck] Замена карты:', oldCard.id);
+            
             this.hand.splice(cardIndex, 1);
-
-            // Добавляем старую карту в сброс
             this.discardPile.push(oldCard);
 
-            // Берем новую из колоды
+            // Если колода пуста, перетасовываем сброс
             if (this.allCards.length === 0) {
                 this._reshuffleDiscard();
             }
 
             if (this.allCards.length > 0) {
                 const newCard = this.allCards.pop();
+                newCard.x = 0;
+                newCard.y = 0;
+                newCard.isPlaced = false;
                 this.hand.push(newCard);
+                console.log('[Deck] Карта заменена на:', newCard.id);
                 // Пополняем руку до базового размера
                 this.refillHand();
                 return newCard;
             }
 
             // Если нет карт, возвращаем старую
+            console.warn('[Deck] Нет карт для замены, возвращаем старую');
             this.hand.push(oldCard);
             return oldCard;
+        }
+
+        /**
+         * Получение информации о колоде (для отладки)
+         */
+        getDebugInfo() {
+            return {
+                handSize: this.hand.length,
+                deckSize: this.allCards.length,
+                discardSize: this.discardPile.length,
+                hand: this.hand.map(c => c.id + ' (выходов:' + c.getOutputCount() + ')'),
+                cardConfigs: this.cardConfigs
+            };
         }
     }
 

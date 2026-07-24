@@ -5,9 +5,6 @@
  window.GameUI = (function() {
     'use strict';
 
-    /**
-     * Класс главного UI
-     */
     class GameUI {
         constructor() {
             this.header = new HeaderUI();
@@ -16,7 +13,6 @@
             this.onCardPlace = null;
             this.onCardRotate = null;
 
-            // Связываем события
             this.footer.onCardSelect = (card) => {
                 if (this.boardRenderer) {
                     this.boardRenderer.setSelectedCard(card);
@@ -26,13 +22,15 @@
             this.footer.onRotate = (index) => {
                 if (this.onCardRotate && index >= 0) {
                     this.onCardRotate(index);
+                    // Обновляем предпросмотр после поворота
+                    const card = this.footer.getSelectedCard();
+                    if (this.boardRenderer) {
+                        this.boardRenderer.setSelectedCard(card);
+                    }
                 }
             };
         }
 
-        /**
-         * Инициализация с полем и колодой
-         */
         init(board, deck) {
             const canvas = document.getElementById('board-canvas');
             if (canvas) {
@@ -46,31 +44,26 @@
             this.update(board, deck);
         }
 
-        /**
-         * Обработка клика по гексу на поле
-         */
         _handleHexClick(hex) {
             if (!hex) return;
             if (hex.isPlaced) return;
 
-            // Проверяем, доступна ли клетка
-            const available = this.boardRenderer.board.getAvailableCells();
-            const isAvailable = available.some(h => h.x === hex.x && h.y === hex.y);
-            if (!isAvailable) return;
-
-            // Проверяем, выбрана ли карта
             const card = this.footer.getSelectedCard();
             if (!card) return;
 
-            // Размещаем карту
+            // Проверяем через BoardRenderer - он уже содержит актуальный список доступных клеток
+            if (this.boardRenderer) {
+                const isAvailable = this.boardRenderer.availableCellsForCard.some(
+                    h => h.x === hex.x && h.y === hex.y
+                );
+                if (!isAvailable) return;
+            }
+
             if (this.onCardPlace) {
                 this.onCardPlace(hex.x, hex.y, card);
             }
         }
 
-        /**
-         * Обновление UI
-         */
         update(board, deck) {
             if (!board) return;
 
@@ -82,23 +75,23 @@
 
             if (deck) {
                 this.footer.render();
+                // Обновляем предпросмотр после обновления колоды
+                const card = this.footer.getSelectedCard();
+                if (this.boardRenderer) {
+                    this.boardRenderer.setSelectedCard(card);
+                }
             }
 
             if (this.boardRenderer) {
                 this.boardRenderer.render();
             }
 
-            // Проверка завершения уровня
             if (board.isLevelComplete()) {
                 this._showLevelComplete();
             }
         }
 
-        /**
-         * Показ сообщения о завершении уровня
-         */
         _showLevelComplete() {
-            // Простое уведомление
             const overlay = document.createElement('div');
             overlay.style.cssText = `
                 position: fixed;
@@ -152,37 +145,22 @@
             });
         }
 
-        /**
-         * Обновление количества инструментов
-         */
         setTools(count) {
             this.header.setTools(count);
         }
 
-        /**
-         * Получение количества инструментов
-         */
         getTools() {
             return this.header.getTools();
         }
 
-        /**
-         * Использование инструмента
-         */
         useTool() {
             return this.header.useTool();
         }
 
-        /**
-         * Добавление инструмента
-         */
         addTool(count) {
             this.header.addTool(count);
         }
 
-        /**
-         * Сброс UI
-         */
         reset() {
             this.header.reset();
             this.footer.reset();
@@ -191,9 +169,6 @@
             }
         }
 
-        /**
-         * Обновление размера поля
-         */
         resize() {
             if (this.boardRenderer) {
                 this.boardRenderer.resize();

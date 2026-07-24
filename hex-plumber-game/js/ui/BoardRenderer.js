@@ -5,14 +5,7 @@
  window.BoardRenderer = (function() {
     'use strict';
 
-    /**
-     * Класс рендерера поля
-     */
     class BoardRenderer {
-        /**
-         * @param {HTMLCanvasElement} canvas - Элемент canvas
-         * @param {Board} board - Игровое поле
-         */
         constructor(canvas, board) {
             this.canvas = canvas;
             this.ctx = canvas.getContext('2d');
@@ -21,16 +14,15 @@
             this.padding = 20;
             this.selectedCard = null;
             this.hoveredHex = null;
+            this.availableCellsForCard = [];
             this.onHexClick = null;
             this.onHexHover = null;
+            this.drawConfig = Hex.getBoardDrawConfig();
 
             this._setupCanvas();
             this._bindEvents();
         }
 
-        /**
-         * Настройка размера canvas
-         */
         _setupCanvas() {
             const rect = this.canvas.parentElement.getBoundingClientRect();
             const size = Math.min(rect.width - 16, rect.height - 16);
@@ -45,16 +37,11 @@
             this.size = size;
             this.hexSize = this.size / (this.board.radius * 2.8 + 1.5);
             
-            // Центрируем поле
             this.offsetX = this.size / 2;
             this.offsetY = this.size / 2;
         }
 
-        /**
-         * Привязка событий
-         */
         _bindEvents() {
-            // Клик
             this.canvas.addEventListener('click', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const scaleX = this.size / rect.width;
@@ -64,7 +51,6 @@
                 this._handleClick(x, y);
             });
 
-            // Ховер (для мобильных - touch)
             this.canvas.addEventListener('mousemove', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const scaleX = this.size / rect.width;
@@ -79,7 +65,6 @@
                 this.render();
             });
 
-            // Touch
             this.canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 const touch = e.touches[0];
@@ -91,7 +76,6 @@
                 this._handleClick(x, y);
             });
 
-            // Resize
             const resizeObserver = new ResizeObserver(() => {
                 this._setupCanvas();
                 this.render();
@@ -104,19 +88,18 @@
             });
         }
 
-        /**
-         * Обработка клика
-         */
         _handleClick(x, y) {
             const hex = this._getHexAt(x, y);
             if (hex && this.onHexClick) {
-                this.onHexClick(hex);
+                const isAvailable = this.availableCellsForCard.some(
+                    h => h.x === hex.x && h.y === hex.y
+                );
+                if (isAvailable) {
+                    this.onHexClick(hex);
+                }
             }
         }
 
-        /**
-         * Обработка ховера
-         */
         _handleHover(x, y) {
             const hex = this._getHexAt(x, y);
             if (hex !== this.hoveredHex) {
@@ -128,9 +111,6 @@
             }
         }
 
-        /**
-         * Получение гекса по координатам мыши
-         */
         _getHexAt(mx, my) {
             const hexSize = this.hexSize;
             const allHexes = this.board.getAllHexes();
@@ -141,23 +121,14 @@
                 const dx = mx - pos.x;
                 const dy = my - pos.y;
 
-                // Проверка попадания в гекс
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < hexSize * 0.85) {
-                    // Дополнительная проверка углов
-                    const angle = Math.atan2(dy, dx);
-                    const hexAngle = Math.PI / 6;
-                    const sector = Math.floor((angle + Math.PI / 2) / (Math.PI / 3));
-                    // Простая проверка
                     return hex;
                 }
             }
             return null;
         }
 
-        /**
-         * Преобразование координат гекса в пиксели
-         */
         _hexToPixel(q, r) {
             const x = this.hexSize * (Math.sqrt(3) * q + Math.sqrt(3) / 2 * r);
             const y = this.hexSize * (3 / 2 * r);
@@ -166,19 +137,51 @@
                 y: y + this.offsetY
             };
         }
-
+        
         /**
-         * Отрисовка гекса
+         * Отрисовка трубы для одной грани
          */
+        _drawPipe(ctx, x, y, size, edgeIndex, isActive = false, config = null) {
+            const cfg = config || this.drawConfig;
+            
+            // Получаем угол из конфигурации
+            const angleDeg = cfg.edgeAngles[edgeIndex % 6];
+            const angle = Math.PI / 180 * angleDeg;
+            
+            // Координаты трубы
+            const startX = x + size * cfg.pipeStartOffset * Math.cos(angle);
+            const startY = y + size * cfg.pipeStartOffset * Math.sin(angle);
+            const endX = x + size * cfg.pipeEndOffset * Math.cos(angle);
+            const endY = y + size * cfg.pipeEndOffset * Math.sin(angle);
+
+            // Рисуем линию трубы
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            
+            const color = isActive ? '#81d4fa' : cfg.pipeColor;
+            const width = isActive ? cfg.pipeWidth + 1 : cfg.pipeWidth;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.shadowColor = isActive ? 'rgba(79, 195, 255, 0.6)' : 'rgba(79, 195, 255, 0.4)';
+            ctx.shadowBlur = isActive ? 12 : 8;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Круг на конце трубы
+            const radius = isActive ? cfg.pipeEndRadius + 1 : cfg.pipeEndRadius;
+            ctx.beginPath();
+            ctx.arc(endX, endY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
         _drawHex(ctx, hex, x, y, size, isHighlighted = false, isHovered = false, isAvailable = false) {
-            const edges = hex.getActiveEdges();
             const isPlaced = hex.isPlaced;
             const isStart = hex.isStart;
 
-            // Цвета
             let fillColor = 'rgba(30, 40, 60, 0.6)';
             let strokeColor = 'rgba(255, 255, 255, 0.15)';
-            let edgeColor = '#4fc3ff';
 
             if (isStart) {
                 fillColor = 'rgba(0, 200, 150, 0.25)';
@@ -188,14 +191,19 @@
                 strokeColor = 'rgba(255, 255, 255, 0.2)';
             }
 
-            if (isAvailable && !isPlaced) {
-                fillColor = 'rgba(79, 195, 255, 0.1)';
-                strokeColor = 'rgba(79, 195, 255, 0.4)';
+            if (isAvailable && !isPlaced && this.selectedCard) {
+                fillColor = 'rgba(79, 195, 255, 0.25)';
+                strokeColor = 'rgba(79, 195, 255, 0.7)';
+                const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 500);
+                ctx.shadowColor = `rgba(79, 195, 255, ${0.3 * pulse})`;
+                ctx.shadowBlur = 20;
             }
 
-            if (isHovered && !isPlaced && isAvailable) {
-                fillColor = 'rgba(79, 195, 255, 0.2)';
-                strokeColor = 'rgba(79, 195, 255, 0.7)';
+            if (isHovered && isAvailable && !isPlaced && this.selectedCard) {
+                fillColor = 'rgba(79, 195, 255, 0.4)';
+                strokeColor = 'rgba(79, 195, 255, 1)';
+                ctx.shadowColor = 'rgba(79, 195, 255, 0.6)';
+                ctx.shadowBlur = 30;
             }
 
             if (isHighlighted) {
@@ -203,10 +211,10 @@
                 fillColor = 'rgba(255, 215, 0, 0.1)';
             }
 
-            // Рисуем шестиугольник
+            // Рисуем шестиугольник - pointy-top (вершина вверх)
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
-                const angle = Math.PI / 180 * (60 * i - 30);
+                const angle = Math.PI / 180 * (60 * i + 30);
                 const px = x + size * Math.cos(angle);
                 const py = y + size * Math.sin(angle);
                 if (i === 0) {
@@ -220,81 +228,63 @@
             ctx.fillStyle = fillColor;
             ctx.fill();
             ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = isAvailable && this.selectedCard ? 2.5 : 1.5;
             ctx.stroke();
+            ctx.shadowBlur = 0;
 
-            // Рисуем трубы (выходы)
-            if (isPlaced || isStart || (isAvailable && this.selectedCard)) {
-                const cardToDraw = this.selectedCard || hex;
-                const activeEdges = cardToDraw.getActiveEdges();
+            // Рисуем трубы на СТОРОНАХ используя конфигурацию
+            const cardToDraw = (isAvailable && this.selectedCard && !isPlaced) ? this.selectedCard : hex;
+            const activeEdges = cardToDraw.getActiveEdges();
+            const config = this.drawConfig;
 
-                activeEdges.forEach(edgeIndex => {
-                    const angle = Math.PI / 180 * (60 * edgeIndex - 30);
-                    const startX = x + size * 0.25 * Math.cos(angle);
-                    const startY = y + size * 0.25 * Math.sin(angle);
-                    const endX = x + size * 0.85 * Math.cos(angle);
-                    const endY = y + size * 0.85 * Math.sin(angle);
+            activeEdges.forEach(edgeIndex => {
+                const isActive = isAvailable && this.selectedCard && !isPlaced;
+                this._drawPipe(ctx, x, y, size, edgeIndex, isActive, config);
+            });
 
-                    // Рисуем трубу (линию)
-                    ctx.beginPath();
-                    ctx.moveTo(startX, startY);
-                    ctx.lineTo(endX, endY);
-                    ctx.strokeStyle = '#4fc3ff';
-                    ctx.lineWidth = 4;
-                    ctx.shadowColor = 'rgba(79, 195, 255, 0.4)';
-                    ctx.shadowBlur = 8;
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-
-                    // Круг на конце
-                    ctx.beginPath();
-                    ctx.arc(endX, endY, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = '#4fc3ff';
-                    ctx.fill();
-                });
-            }
-
-            // Если гекс пустой, показываем маленькие точки для ориентира
+            // Отладочные номера граней (на сторонах)
             if (!isPlaced && !isStart) {
                 for (let i = 0; i < 6; i++) {
-                    const angle = Math.PI / 180 * (60 * i - 30);
-                    const px = x + size * 0.85 * Math.cos(angle);
-                    const py = y + size * 0.85 * Math.sin(angle);
-                    ctx.beginPath();
-                    ctx.arc(px, py, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                    ctx.fill();
+                    const angleDeg = config.edgeAngles[i];
+                    const angle = Math.PI / 180 * angleDeg;
+                    const px = x + size * 0.7 * Math.cos(angle);
+                    const py = y + size * 0.7 * Math.sin(angle);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(i, px, py);
                 }
             }
         }
 
-        /**
-         * Основной метод рендеринга
-         */
         render() {
             const ctx = this.ctx;
             const size = this.size;
             const hexSize = this.hexSize;
 
-            // Очистка
             ctx.clearRect(0, 0, size, size);
 
-            // Фон
             const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
             gradient.addColorStop(0, 'rgba(20, 40, 70, 0.2)');
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, size, size);
 
-            // Получаем все гексы
             const allHexes = this.board.getAllHexes();
-            const availableCells = this.board.getAvailableCells();
-            const availableSet = new Set(availableCells.map(h => h.x + ',' + h.y));
+            
+            this.availableCellsForCard = [];
+            if (this.selectedCard) {
+                this.availableCellsForCard = this.board.getAvailableCellsForCard(this.selectedCard);
+            }
+            
+            const availableSet = new Set(this.availableCellsForCard.map(h => h.x + ',' + h.y));
 
-            // Сортируем для правильного порядка отрисовки
-            allHexes.sort((a, b) => (a.y + a.x/2) - (b.y + b.x/2));
+            allHexes.sort((a, b) => {
+                if (a.y !== b.y) return a.y - b.y;
+                return a.x - b.x;
+            });
 
-            // Отрисовка каждого гекса
             allHexes.forEach(hex => {
                 const pos = this._hexToPixel(hex.x, hex.y);
                 const isAvailable = availableSet.has(hex.x + ',' + hex.y);
@@ -302,49 +292,57 @@
                     this.hoveredHex.x === hex.x && 
                     this.hoveredHex.y === hex.y;
 
-                // Проверяем, нужно ли рисовать карту поверх
-                if (this.selectedCard && !hex.isPlaced && isAvailable) {
-                    // Рисуем пустой гекс с контуром
-                    this._drawHex(ctx, hex, pos.x, pos.y, hexSize, false, isHovered, true);
-                    // Рисуем карту поверх (прозрачно)
+                if (this.selectedCard && isAvailable && !hex.isPlaced) {
                     this._drawHex(ctx, this.selectedCard, pos.x, pos.y, hexSize, false, isHovered, true);
                 } else {
                     this._drawHex(ctx, hex, pos.x, pos.y, hexSize, false, isHovered, isAvailable);
                 }
             });
 
-            // Рисуем сетку сверху (легкие линии)
+            // Сетка
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
             ctx.lineWidth = 0.5;
-            for (let i = -this.board.radius - 1; i <= this.board.radius + 1; i++) {
-                const p1 = this._hexToPixel(i, -this.board.radius - 1);
-                const p2 = this._hexToPixel(i, this.board.radius + 1);
+            
+            for (let r = -this.board.radius - 1; r <= this.board.radius + 1; r++) {
+                const startQ = -this.board.radius - 1;
+                const endQ = this.board.radius + 1;
+                const p1 = this._hexToPixel(startQ, r);
+                const p2 = this._hexToPixel(endQ, r);
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 ctx.lineTo(p2.x, p2.y);
                 ctx.stroke();
             }
-            for (let i = -this.board.radius - 1; i <= this.board.radius + 1; i++) {
-                const p1 = this._hexToPixel(-this.board.radius - 1, i);
-                const p2 = this._hexToPixel(this.board.radius + 1, i);
+            
+            for (let q = -this.board.radius - 1; q <= this.board.radius + 1; q++) {
+                const startR = -this.board.radius - 1;
+                const endR = this.board.radius + 1;
+                const p1 = this._hexToPixel(q, startR);
+                const p2 = this._hexToPixel(q, endR);
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 ctx.lineTo(p2.x, p2.y);
                 ctx.stroke();
+            }
+
+            if (this.availableCellsForCard.length > 0 && this.selectedCard) {
+                requestAnimationFrame(() => {
+                    if (this.availableCellsForCard.length > 0) {
+                        setTimeout(() => this.render(), 500);
+                    }
+                });
             }
         }
 
-        /**
-         * Установка выбранной карты для предпросмотра
-         */
         setSelectedCard(card) {
             this.selectedCard = card;
+            this.availableCellsForCard = [];
+            if (card) {
+                this.availableCellsForCard = this.board.getAvailableCellsForCard(card);
+            }
             this.render();
         }
 
-        /**
-         * Обновление размера
-         */
         resize() {
             this._setupCanvas();
             this.render();

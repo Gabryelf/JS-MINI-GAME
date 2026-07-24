@@ -80,11 +80,14 @@
          * Старт игры
          */
         _startGame() {
+            console.log('[Game] Запуск игры...');
+            
             // Создаем UI
             this.ui = new GameUI();
 
             // Создаем уровень
             this.level = Level.createLevel(this.currentLevel);
+            console.log('[Game] Уровень:', this.currentLevel, 'Радиус:', this.level.boardRadius);
             
             // Создаем поле
             this.board = new Board({
@@ -96,12 +99,18 @@
             this.level.startCoords.forEach(([x, y]) => {
                 this.board.addStartHex(x, y);
             });
+            console.log('[Game] Добавлено стартовых гексов:', this.level.startCoords.length);
 
             // Создаем колоду
+            console.log('[Game] Создание колоды с конфигурацией:', this.level.cardConfigs.length, 'карт');
             this.deck = new Deck({
                 cardConfigs: this.level.cardConfigs,
                 baseHandSize: this.level.baseHandSize
             });
+
+            // Проверяем, что карты в руке есть
+            console.log('[Game] Карт в руке после создания:', this.deck.getHandSize());
+            console.log('[Game] Информация о колоде:', this.deck.getDebugInfo());
 
             // Инициализируем UI
             this.ui.init(this.board, this.deck);
@@ -121,6 +130,12 @@
             // Показываем баннер в Яндекс.Играх
             YandexSDK.showBanner();
 
+            // Принудительно обновляем UI
+            setTimeout(() => {
+                this.ui.update(this.board, this.deck);
+                console.log('[Game] UI обновлен. Карт в руке:', this.deck.getHandSize());
+            }, 100);
+
             this.isRunning = true;
             console.log('[Game] Игра запущена, уровень', this.currentLevel);
         }
@@ -132,13 +147,13 @@
             if (!this.isRunning || this.isPaused) return;
             if (!this.board) return;
 
-            // Проверяем, можно ли разместить
+            console.log(`[Game] Попытка разместить карту на (${x},${y})`);
+
             if (!this.board.canPlaceHex(x, y, card)) {
                 console.log('[Game] Нельзя разместить здесь');
                 return;
             }
 
-            // Получаем индекс карты в руке
             const hand = this.deck.getHand();
             let cardIndex = -1;
             for (let i = 0; i < hand.length; i++) {
@@ -148,19 +163,27 @@
                 }
             }
 
-            if (cardIndex === -1) return;
+            if (cardIndex === -1) {
+                console.warn('[Game] Карта не найдена в руке');
+                return;
+            }
 
-            // Размещаем
             const success = this.board.placeHex(x, y, card);
-            if (!success) return;
+            if (!success) {
+                console.warn('[Game] Не удалось разместить карту');
+                return;
+            }
 
             // Удаляем карту из руки
             this.deck.useCard(cardIndex);
 
             // Проверяем уровень затопленности
             const flood = this.board.calculateFlood();
-            if (flood > this.level.maxFloodAllowed) {
-                // Игрок проиграл
+            console.log('[Game] Уровень затопленности:', flood);
+            
+            // УСЛОВИЕ ПОРАЖЕНИЯ: 9 или более течей
+            if (flood >= 9) {
+                console.log('[Game] Игра проиграна! Течей:', flood);
                 this._gameOver();
                 return;
             }
@@ -168,7 +191,7 @@
             // Обновляем UI
             this.ui.update(this.board, this.deck);
 
-            // Проверяем завершение
+            // Проверяем завершение (0 течей)
             if (this.board.isLevelComplete()) {
                 this._levelComplete();
             }
@@ -305,9 +328,14 @@
             this.ui.reset();
             this.ui.init(this.board, this.deck);
             this.ui.setTools(this.tools);
-            this.ui.update(this.board, this.deck);
+            
+            // Принудительное обновление
+            setTimeout(() => {
+                this.ui.update(this.board, this.deck);
+            }, 50);
 
             this.isRunning = true;
+            console.log('[Game] Уровень перезапущен');
         }
 
         /**
@@ -334,9 +362,14 @@
             this.ui.reset();
             this.ui.init(this.board, this.deck);
             this.ui.setTools(this.tools);
-            this.ui.update(this.board, this.deck);
+            
+            // Принудительное обновление
+            setTimeout(() => {
+                this.ui.update(this.board, this.deck);
+            }, 50);
 
             this.isRunning = true;
+            console.log('[Game] Запущен уровень', this.currentLevel);
         }
 
         /**
