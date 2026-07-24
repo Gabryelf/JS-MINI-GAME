@@ -1,8 +1,5 @@
-/**
- * Игровое поле
- * @namespace Board
- */
- window.Board = (function() {
+// ===== core/Board.js =====
+window.Board = (function() {
     'use strict';
 
     class Board {
@@ -12,14 +9,19 @@
             this.hexes = new Map();
             this.startHexes = [];
             this.placedHexes = [];
+            this.blockedCoords = new Set();
             this.isLocked = false;
             this._initBoard();
+            // Для камеры
+            this.cameraX = 0;
+            this.cameraY = 0;
         }
 
         _initBoard() {
             this.hexes.clear();
             this.startHexes = [];
             this.placedHexes = [];
+            this.blockedCoords.clear();
 
             for (let q = -this.radius; q <= this.radius; q++) {
                 for (let r = -this.radius; r <= this.radius; r++) {
@@ -31,23 +33,21 @@
                             rotation: 0,
                             edges: [],
                             isPlaced: false,
-                            isStart: false
+                            isStart: false,
+                            isBlocked: false
                         });
                         this.hexes.set(key, hex);
                     }
                 }
             }
-
             this.addStartHex(0, 0);
         }
 
         addStartHex(x, y) {
             const key = x + ',' + y;
             if (this.hexes.has(key)) {
-                // Создаем стартовый гекс с поворотом на 180° (3)
-                // чтобы трубы указывали на стороны
                 const startHex = Hex.createStart(x, y);
-                startHex.rotation = 3; // Поворот на 180°
+                startHex.rotation = 3;
                 startHex.id = 'start_' + Date.now() + '_' + this.startHexes.length;
                 this.hexes.set(key, startHex);
                 this.startHexes.push(startHex);
@@ -66,16 +66,23 @@
             return results;
         }
 
+        blockHexes(coords) {
+            coords.forEach(([x, y]) => {
+                const key = x + ',' + y;
+                if (this.hexes.has(key)) {
+                    const hex = this.hexes.get(key);
+                    hex.isBlocked = true;
+                    this.blockedCoords.add(key);
+                }
+            });
+        }
+
         canPlaceHex(x, y, hex) {
             const key = x + ',' + y;
-            if (!this.hexes.has(key)) {
-                return false;
-            }
+            if (!this.hexes.has(key)) return false;
             
             const existing = this.hexes.get(key);
-            if (existing.isPlaced) {
-                return false;
-            }
+            if (existing.isPlaced || existing.isBlocked) return false;
 
             const neighbors = this._getNeighborCoords(x, y);
             let hasMatchingNeighbor = false;
@@ -88,40 +95,31 @@
                     const neighborHex = this.hexes.get(neighborKey);
                     if (neighborHex.isPlaced) {
                         const oppositeDir = (dir + 3) % 6;
-                        
                         const hasOurEdge = hex.hasEdge(dir);
                         const hasNeighborEdge = neighborHex.hasEdge(oppositeDir);
                         
                         if (hasNeighborEdge) {
-                            if (!hasOurEdge) {
-                                return false;
-                            }
+                            if (!hasOurEdge) return false;
                             hasMatchingNeighbor = true;
                         } else {
-                            if (hasOurEdge) {
-                                return false;
-                            }
+                            if (hasOurEdge) return false;
                         }
                     }
                 }
             }
-
             return hasMatchingNeighbor;
         }
 
         getAvailableCellsForCard(card) {
             const available = [];
             const allHexes = this.getAllHexes();
-            
             for (let i = 0; i < allHexes.length; i++) {
                 const hex = allHexes[i];
-                if (hex.isPlaced) continue;
-                
+                if (hex.isPlaced || hex.isBlocked) continue;
                 if (this.canPlaceHex(hex.x, hex.y, card)) {
                     available.push(hex);
                 }
             }
-            
             return available;
         }
 
@@ -139,7 +137,6 @@
 
             this.hexes.set(key, existing);
             this.placedHexes.push(existing);
-
             return true;
         }
 
@@ -164,7 +161,6 @@
                 for (let j = i + 1; j < placed.length; j++) {
                     const hex1 = placed[i];
                     const hex2 = placed[j];
-                    
                     const dx = hex2.x - hex1.x;
                     const dy = hex2.y - hex1.y;
                     
@@ -181,10 +177,7 @@
                         const oppositeDir = (dir + 3) % 6;
                         const has1 = hex1.hasEdge(dir);
                         const has2 = hex2.hasEdge(oppositeDir);
-                        
-                        if (has1 !== has2) {
-                            leakCount++;
-                        }
+                        if (has1 !== has2) leakCount++;
                     }
                 }
             }
@@ -194,16 +187,11 @@
                 for (let dir = 0; dir < 6; dir++) {
                     const neighbor = neighbors[dir];
                     const key = neighbor.x + ',' + neighbor.y;
-                    
-                    if (!this.hexes.has(key)) {
-                        if (hex.hasEdge(dir)) {
-                            leakCount++;
-                        }
+                    if (!this.hexes.has(key) || this.hexes.get(key).isBlocked) {
+                        if (hex.hasEdge(dir)) leakCount++;
                     } else {
                         const neighborHex = this.hexes.get(key);
-                        if (!neighborHex.isPlaced && hex.hasEdge(dir)) {
-                            leakCount++;
-                        }
+                        if (!neighborHex.isPlaced && hex.hasEdge(dir)) leakCount++;
                     }
                 }
             });
@@ -212,8 +200,8 @@
         }
 
         calculateProgress() {
-            const total = this.hexes.size;
-            const placed = this.placedHexes.length;
+            const total = this.hexes.size - this.blockedCoords.size;
+            const placed = this.placedHexes.length - this.startHexes.length;
             return total > 0 ? placed / total : 0;
         }
 
@@ -225,6 +213,9 @@
             this.hexes.clear();
             this.startHexes = [];
             this.placedHexes = [];
+            this.blockedCoords.clear();
+            this.cameraX = 0;
+            this.cameraY = 0;
             this._initBoard();
         }
 
@@ -245,9 +236,7 @@
             const coords = this._getNeighborCoords(x, y);
             coords.forEach(coord => {
                 const neighbor = this.getHex(coord.x, coord.y);
-                if (neighbor) {
-                    neighbors.push(neighbor);
-                }
+                if (neighbor) neighbors.push(neighbor);
             });
             return neighbors;
         }
@@ -255,18 +244,14 @@
         getAvailableCells() {
             const available = [];
             const allHexes = this.getAllHexes();
-            
             for (let i = 0; i < allHexes.length; i++) {
                 const hex = allHexes[i];
-                if (hex.isPlaced) continue;
-                
+                if (hex.isPlaced || hex.isBlocked) continue;
                 const neighbors = this.getNeighbors(hex.x, hex.y);
                 let hasNeighborWithOutput = false;
-                
                 for (let j = 0; j < neighbors.length; j++) {
                     const neighbor = neighbors[j];
                     if (!neighbor.isPlaced) continue;
-                    
                     const dx = hex.x - neighbor.x;
                     const dy = hex.y - neighbor.y;
                     let dir = -1;
@@ -277,19 +262,36 @@
                             break;
                         }
                     }
-                    
                     if (dir !== -1 && neighbor.hasEdge(dir)) {
                         hasNeighborWithOutput = true;
                         break;
                     }
                 }
-                
-                if (hasNeighborWithOutput) {
-                    available.push(hex);
-                }
+                if (hasNeighborWithOutput) available.push(hex);
             }
-            
             return available;
+        }
+
+        getBoardBounds() {
+            const hexes = this.getAllHexes();
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            hexes.forEach(h => {
+                if (h.x < minX) minX = h.x;
+                if (h.x > maxX) maxX = h.x;
+                if (h.y < minY) minY = h.y;
+                if (h.y > maxY) maxY = h.y;
+            });
+            return { minX, maxX, minY, maxY };
+        }
+
+        moveCamera(dx, dy) {
+            this.cameraX += dx;
+            this.cameraY += dy;
+        }
+
+        setCamera(x, y) {
+            this.cameraX = x;
+            this.cameraY = y;
         }
     }
 

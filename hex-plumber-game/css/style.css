@@ -167,6 +167,12 @@ body {
     position: relative;
     min-height: 0;
     background: radial-gradient(ellipse at center, rgba(15, 52, 96, 0.5), rgba(0, 0, 0, 0.3));
+    overflow: hidden;
+    cursor: grab;
+}
+
+#game-board:active {
+    cursor: grabbing;
 }
 
 #board-canvas {
