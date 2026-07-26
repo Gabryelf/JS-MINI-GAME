@@ -280,6 +280,70 @@ body {
     background: rgba(79, 195, 255, 0.35);
 }
 
+/* tools */
+.tool-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tool-use-btn {
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 217, 61, 0.15);
+    border-color: rgba(255, 217, 61, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-use-btn:hover:not(:disabled) {
+    background: rgba(255, 217, 61, 0.3);
+    transform: scale(1.1);
+}
+
+.tool-use-btn:active:not(:disabled) {
+    transform: scale(0.9);
+}
+
+.tool-use-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tool-use-btn .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-swap {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd93d'%3E%3Cpath d='M6 6L4 8l2 2V7h5v2H6zm12 12l2-2-2-2v3h-5v2h5z'/%3E%3C/svg%3E");
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Индикатор возможности вращения */
+.card-slot.rotatable .card-badge {
+    background: #4fc3ff;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.card-slot .card-badge.locked {
+    background: #ff6b6b;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 420px) {
     #game-container {

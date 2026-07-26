@@ -20,6 +20,7 @@
             this.flood = 0;
             this.progress = 0;
 
+            this.toolBtn = document.getElementById('use-tool-btn');
             this._bindEvents();
         }
 
@@ -31,6 +32,29 @@
                 this.settingsBtn.addEventListener('click', () => {
                     this._showSettingsModal();
                 });
+            }
+
+            if (this.toolBtn) {
+                this.toolBtn.addEventListener('click', () => {
+                    if (window.gameInstance && window.gameInstance._useTool) {
+                        window.gameInstance._useTool();
+                    }
+                });
+            }
+        }
+
+        /**
+         * Обновление инструментов
+         */
+
+        setTools(count) {
+            this.tools = Math.max(0, count);
+            if (this.toolsElement) {
+                this.toolsElement.textContent = this.tools;
+            }
+            // Обновляем состояние кнопки
+            if (this.toolBtn) {
+                this.toolBtn.disabled = this.tools <= 0;
             }
         }
 

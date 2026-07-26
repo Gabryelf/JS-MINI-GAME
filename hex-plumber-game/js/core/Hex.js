@@ -166,7 +166,7 @@
                 x: x,
                 y: y,
                 rotation: 0,
-                edges: [0, 1, 2, 3, 4, 5],
+                edges: [0, 1],
                 isPlaced: true,
                 isStart: true
             });

@@ -114,23 +114,132 @@ window.Game = (function() {
 
         _rotateCard(index) {
             if (!this.isRunning || this.isPaused) return;
+            
+            // Проверяем, можно ли вращать (течей <= 6)
             const flood = this.board.calculateFlood();
-            if (flood > 3) return;
+            if (flood > 6) {
+                // Показываем уведомление
+                this._showNotification('❌ Слишком много течей!', 'error');
+                return;
+            }
+            
+            // Вращаем карту
             this.deck.rotateHandCard(index);
             this.ui.footer.render();
             const card = this.deck.getHand()[index];
             if (this.ui.boardRenderer) this.ui.boardRenderer.setSelectedCard(card);
+            
+            // Обновляем отображение
+            this.ui.update(this.board, this.deck);
+        }
+        
+        _useTool() {
+            if (!this.isRunning || this.isPaused) return false;
+            if (this.tools <= 0) {
+                this._showNotification('❌ Нет инструментов!', 'error');
+                return false;
+            }
+            
+            const selectedIndex = this.ui.footer.getSelectedIndex();
+            if (selectedIndex < 0) {
+                this._showNotification('❌ Выберите карту!', 'warning');
+                return false;
+            }
+            
+            // Проверяем, можно ли заменить (течей <= 6)
+            const flood = this.board.calculateFlood();
+            if (flood > 6) {
+                this._showNotification('❌ Слишком много течей!', 'error');
+                return false;
+            }
+            
+            // Заменяем карту
+            const newCard = this.deck.swapCard(selectedIndex);
+            if (newCard) {
+                this.tools--;
+                this.ui.setTools(this.tools);
+                this.ui.footer.render();
+                this.ui.footer.selectCard(selectedIndex);
+                const card = this.ui.footer.getSelectedCard();
+                if (this.ui.boardRenderer) this.ui.boardRenderer.setSelectedCard(card);
+                this._savePlayerData();
+                this._showNotification('✅ Карта заменена!', 'success');
+                return true;
+            }
+            
+            return false;
+        }
+
+        _showNotification(message, type = 'info') {
+            const oldNotification = document.querySelector('.game-notification');
+            if (oldNotification) oldNotification.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = 'game-notification';
+            const colors = {
+                success: '#4caf50',
+                error: '#ff6b6b',
+                warning: '#ffd93d',
+                info: '#4fc3ff'
+            };
+            notification.style.cssText = `
+                position: fixed;
+                top: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.85);
+                color: ${colors[type] || '#ffffff'};
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-size: 16px;
+                font-weight: 600;
+                z-index: 2000;
+                border: 2px solid ${colors[type] || '#ffffff'};
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(10px);
+                animation: slideDown 0.3s ease;
+                max-width: 90%;
+                text-align: center;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(-50%) translateY(-20px)';
+                notification.style.transition = 'all 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
         }
 
         _levelComplete() {
             console.log('[Game] Уровень пройден!');
-            const reward = 1 + Math.floor(Math.random() * 2);
+            
+            // Проверяем, с первого ли раза пройден уровень
+            const isFirstAttempt = this._isFirstAttempt();
+            
+            let reward = 1; // Базовый бонус
+            if (isFirstAttempt) {
+                // Бонус за прохождение с первого раза
+                reward = 2 + Math.floor(Math.random() * 2);
+                this._showNotification(`🌟 Бонус! +${reward} инструментов за идеальное прохождение!`, 'success');
+            } else {
+                this._showNotification(`✅ Уровень пройден! +1 инструмент`, 'success');
+            }
+            
             this.tools += reward;
-            this.score += 10;
-            this.ui.addTool(reward);
+            this.score += 10 + reward * 2;
+            this.ui.setTools(this.tools);
             this.currentLevel++;
             this._savePlayerData();
             YandexSDK.showBanner();
+        }
+        
+        _isFirstAttempt() {
+            // Проверяем, есть ли сохранение о попытках
+            const attemptsKey = 'hexPlumber_attempts_' + this.currentLevel;
+            const attempts = parseInt(localStorage.getItem(attemptsKey) || '0');
+            return attempts === 0;
         }
 
         _gameOver() {
