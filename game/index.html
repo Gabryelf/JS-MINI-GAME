@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>PIXEL TANKS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Press Start 2P', system-ui, monospace;
+            background: #05070c;
+            color: #e2e8f0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(180deg, #0f172a 0%, #0a0f1a 100%);
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1e293b;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        .resources {
+            display: flex;
+            gap: 14px;
+            font-size: 11px;
+        }
+
+        .gold { color: #fbbf24; text-shadow: 0 0 10px #fbbf24; }
+        .scrap { color: #94a3b8; }
+        .fuel { color: #34d399; text-shadow: 0 0 8px #34d399; }
+
+        .nav-buttons { display: flex; gap: 6px; }
+
+        .btn {
+            padding: 9px 12px;
+            border: 3px solid;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.12s;
+            image-rendering: pixelated;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+            text-transform: uppercase;
+        }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.5); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.5); }
+
+        .btn-gray { background: #1e293b; border-color: #475569; color: #cbd5e1; }
+        .btn-blue { background: #1e3a8a; border-color: #3b82f6; color: #93c5fd; }
+        .btn-green { background: #064e3b; border-color: #10b981; color: #6ee7b7; }
+        .btn-yellow { background: #78350f; border-color: #f59e0b; color: #fcd34d; }
+        .btn-red { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .content { flex: 1; overflow: hidden; position: relative; }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+        .screen.active { display: flex; }
+
+        /* ===== MENU ===== */
+        .menu {
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 30%, #111827 0%, #05070c 70%);
+            padding: 16px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .menu::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(0,0,0,0.12) 3px,
+                rgba(0,0,0,0.12) 6px
+            );
+            pointer-events: none;
+        }
+
+        .menu h1 {
+            font-size: clamp(22px, 6vw, 32px);
+            color: #fbbf24;
+            margin-bottom: 6px;
+            text-shadow: 4px 4px 0 #78350f, 0 0 24px #fbbf24;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .menu h2 {
+            font-size: clamp(12px, 3.5vw, 16px);
+            color: #fb923c;
+            margin-bottom: 14px;
+            text-shadow: 3px 3px 0 #7c2d12;
+            text-align: center;
+        }
+
+        .menu .subtitle {
+            color: #64748b;
+            font-size: 8px;
+            margin-bottom: 22px;
+            text-align: center;
+            line-height: 1.7;
+            max-width: 320px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .stat-card {
+            background: #0f172a;
+            padding: 12px 8px;
+            border: 3px solid #1e293b;
+            text-align: center;
+            box-shadow: 0 4px 0 #020617;
+        }
+
+        .stat-card .icon { font-size: 18px; margin-bottom: 4px; }
+        .stat-card .label { font-size: 7px; color: #64748b; margin-bottom: 4px; }
+        .stat-card .value { font-size: 13px; color: #e2e8f0; }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .menu-buttons .btn {
+            padding: 16px 20px;
+            font-size: 11px;
+            width: 100%;
+        }
+
+        .menu .footer {
+            margin-top: 18px;
+            font-size: 7px;
+            color: #475569;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        /* ===== MISSIONS ===== */
+        .missions {
+            padding: 12px;
+            background: #05070c;
+            overflow: hidden;
+        }
+
+        .missions h2 {
+            text-align: center;
+            color: #fbbf24;
+            font-size: 13px;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 0 #78350f;
+        }
+
+        .missions .info {
+            text-align: center;
+            font-size: 8px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .mission-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mission-item {
+            padding: 12px;
+            border: 3px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            gap: 8px;
+        }
+
+        .mission-item.completed { border-color: #065f46; background: #022c22; }
+        .mission-item.current {
+            border-color: #3b82f6;
+            background: #0c1a3a;
+            box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
+        }
+        .mission-item.unlocked { border-color: #334155; }
+        .mission-item.locked { border-color: #1e293b; opacity: 0.4; }
+
+        .mission-info .name { font-size: 9px; margin-bottom: 4px; }
+        .mission-info .details { font-size: 7px; color: #64748b; }
+
+        .mission-reward { text-align: right; flex-shrink: 0; }
+        .mission-reward .rewards { font-size: 8px; margin-bottom: 6px; }
+
+        /* ===== GARAGE ===== */
+        .garage {
+            padding: 10px;
+            background: #05070c;
+            overflow: hidden;
+        }
+
+        .garage h2 {
+            text-align: center;
+            color: #34d399;
+            font-size: 13px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #064e3b;
+        }
+
+        .garage-content {
+            display: flex;
+            gap: 10px;
+            height: calc(100% - 36px);
+        }
+
+        .tank-list {
+            width: 140px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tank-item {
+            padding: 8px;
+            border: 3px solid #334155;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0f172a;
+            transition: all 0.12s;
+        }
+
+        .tank-item.selected {
+            border-color: #10b981;
+            background: #022c22;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .tank-item.owned:hover { background: #1e293b; }
+        .tank-item:not(.owned) { opacity: 0.5; }
+
+        .tank-icon {
+            width: 40px;
+            height: 40px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .tank-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .tank-name { font-size: 8px; margin-bottom: 2px; }
+        .tank-level { font-size: 7px; color: #64748b; }
+
+        .tank-details {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tank-details-card {
+            background: #0f172a;
+            border: 3px solid #1e293b;
+            padding: 14px;
+            box-shadow: 0 4px 0 #020617;
+        }
+
+        .tank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .tank-header h3 { font-size: 12px; color: #e2e8f0; }
+        .tank-header .level { font-size: 8px; color: #64748b; margin-top: 3px; }
+
+        .stats-bars {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 7px;
+            margin-bottom: 12px;
+        }
+
+        .stat-bar {
+            background: #020617;
+            padding: 7px;
+            border: 2px solid #1e293b;
+        }
+
+        .stat-bar .label { font-size: 7px; color: #64748b; margin-bottom: 2px; }
+        .stat-bar .value { font-size: 10px; }
+
+        .stat-bar .bar {
+            width: 100%;
+            height: 5px;
+            background: #1e293b;
+            margin-top: 4px;
+            border: 1px solid #334155;
+        }
+
+        .stat-bar .bar-fill { height: 100%; transition: width 0.2s; }
+
+        .upgrades { margin-top: 10px; }
+        .upgrades h4 {
+            font-size: 9px;
+            color: #fbbf24;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 0 #78350f;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #020617;
+            padding: 7px 8px;
+            border: 2px solid #1e293b;
+            margin-bottom: 5px;
+            gap: 6px;
+        }
+
+        .upgrade-info { display: flex; align-items: center; gap: 6px; font-size: 8px; }
+
+        .upgrade-dots { display: flex; gap: 2px; }
+        .upgrade-dot {
+            width: 6px;
+            height: 10px;
+            border: 1px solid #334155;
+        }
+        .upgrade-dot.filled { background: #fbbf24; border-color: #f59e0b; }
+        .upgrade-dot.empty { background: #1e293b; }
+
+        /* ===== BATTLE ===== */
+        .battle {
+            background: #000;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .battle-controls {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 7px;
+            color: rgba(148, 163, 184, 0.7);
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        #battleCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            image-rendering: pixelated;
+            background: #0a0c12;
+        }
+
+        .exit-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 30;
+            padding: 8px 10px !important;
+            font-size: 9px !important;
+        }
+
+        /* ===== RESULT ===== */
+        .result {
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #111827 0%, #05070c 80%);
+            padding: 20px;
+        }
+
+        .result .icon { font-size: 52px; margin-bottom: 14px; }
+        .result h2 {
+            font-size: clamp(18px, 5vw, 24px);
+            margin-bottom: 18px;
+            text-shadow: 3px 3px 0 #000;
+        }
+        .result.victory h2 { color: #34d399; }
+        .result.defeat h2 { color: #ef4444; }
+
+        .reward-card {
+            background: #0f172a;
+            border: 4px solid #1e293b;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 6px 0 #020617;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .reward-card h3 {
+            color: #fbbf24;
+            font-size: 11px;
+            margin-bottom: 16px;
+        }
+
+        .rewards { display: flex; gap: 28px; justify-content: center; }
+        .reward-item .icon { font-size: 26px; margin-bottom: 6px; }
+        .reward-item .amount { font-size: 16px; color: #e2e8f0; }
+        .reward-item .label { font-size: 7px; color: #64748b; margin-top: 4px; }
+
+        /* ===== MOBILE CONTROLS ===== */
+        .mobile-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: none;
+            justify-content: space-between;
+            padding: 0 18px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .joystick {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.7);
+            border: 4px solid rgba(71, 85, 105, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        .joystick-stick {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(100, 116, 139, 0.95);
+            border: 3px solid #94a3b8;
+            transition: transform 0.06s;
+        }
+
+        .shoot-btn {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: rgba(127, 29, 29, 0.85);
+            border: 4px solid #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            pointer-events: auto;
+            align-self: flex-end;
+            box-shadow: 0 5px 0 #450a0a;
+            touch-action: none;
+        }
+
+        .shoot-btn:active {
+            background: rgba(185, 28, 28, 0.95);
+            transform: scale(0.92);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .mobile-controls { display: flex; }
+            .header { padding: 8px 10px; }
+            .resources { font-size: 10px; gap: 10px; }
+            .btn { padding: 8px 10px; font-size: 8px; }
+            .tank-list { width: 120px; }
+            .garage-content { gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { max-width: 100%; }
+            .menu-buttons { max-width: 100%; }
+            .tank-list { width: 110px; }
+            .joystick { width: 110px; height: 110px; }
+            .shoot-btn { width: 76px; height: 76px; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border: 1px solid #0f172a;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header" id="mainHeader">
+            <div class="resources">
+                <span class="gold">💰 <span id="goldDisplay">0</span></span>
+                <span class="scrap">🔩 <span id="scrapDisplay">0</span></span>
+                <span class="fuel">⛽ <span id="fuelDisplay">0/20</span></span>
+            </div>
+            <div class="nav-buttons" id="navButtons">
+                <button class="btn btn-gray" onclick="showScreen('menu')">МЕНЮ</button>
+                <button class="btn btn-blue" onclick="showScreen('missions')">МИССИИ</button>
+                <button class="btn btn-green" onclick="showScreen('garage')">ГАРАЖ</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- MENU -->
+            <div id="menuScreen" class="screen menu active">
+                <h1>PIXEL TANKS</h1>
+                <h2>ТАНКОВЫЙ РОГАЛИК</h2>
+                <div class="subtitle">Проходи миссии • Собирай ресурсы<br>Улучшай танки • Стань легендой</div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon">🏆</div>
+                        <div class="label">МИССИЙ</div>
+                        <div class="value" id="statMissions">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">💀</div>
+                        <div class="label">УБИЙСТВ</div>
+                        <div class="value" id="statKills">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">🏢</div>
+                        <div class="label">ЭТАЖ</div>
+                        <div class="value" id="statFloor">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">🚀</div>
+                        <div class="label">ТАНКОВ</div>
+                        <div class="value" id="statTanks">1/6</div>
+                    </div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn btn-blue" onclick="showScreen('missions')">⚔ НАЧАТЬ МИССИЮ</button>
+                    <button class="btn btn-green" onclick="showScreen('garage')">🔧 ГАРАЖ</button>
+                </div>
+
+                <div class="footer">
+                    <div>⛽ +1 топливо в минуту • 1 топливо = 1 миссия</div>
+                    <div>Прогресс сохраняется автоматически</div>
+                </div>
+            </div>
+
+            <!-- MISSIONS -->
+            <div id="missionsScreen" class="screen missions">
+                <h2>КАРТА МИССИЙ</h2>
+                <div class="info">Этаж: <b id="missionFloor">1</b> • Топливо: <b id="missionFuel">20/20</b></div>
+                <div class="mission-list" id="missionList"></div>
+            </div>
+
+            <!-- GARAGE -->
+            <div id="garageScreen" class="screen garage">
+                <h2>ГАРАЖ</h2>
+                <div class="garage-content">
+                    <div class="tank-list" id="tankList"></div>
+                    <div class="tank-details" id="tankDetails"></div>
+                </div>
+            </div>
+
+            <!-- BATTLE -->
+            <div id="battleScreen" class="screen battle">
+                <div class="battle-controls" id="battleControlsText">WASD / СТРЕЛКИ — движение • МЫШЬ — прицел • ЛКМ / ПРОБЕЛ — огонь</div>
+                <canvas id="battleCanvas"></canvas>
+                <button class="btn btn-red exit-btn" onclick="exitBattle()">✕</button>
+                <div class="mobile-controls" id="mobileControls">
+                    <div class="joystick" id="joystick">
+                        <div class="joystick-stick" id="joystickStick"></div>
+                    </div>
+                    <div class="shoot-btn" id="shootBtn">🔥</div>
+                </div>
+            </div>
+
+            <!-- RESULT -->
+            <div id="resultScreen" class="screen result">
+                <div class="icon" id="resultIcon">🏆</div>
+                <h2 id="resultTitle">ПОБЕДА!</h2>
+                <div class="reward-card" id="rewardCard">
+                    <h3>НАГРАДЫ</h3>
+                    <div class="rewards">
+                        <div class="reward-item">
+                            <div class="icon">💰</div>
+                            <div class="amount" id="rewardGold">0</div>
+                            <div class="label">золото</div>
+                        </div>
+                        <div class="reward-item">
+                            <div class="icon">🔩</div>
+                            <div class="amount" id="rewardScrap">0</div>
+                            <div class="label">металлолом</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-blue" onclick="showScreen('missions')" style="padding: 14px 24px; font-size: 11px;">ПРОДОЛЖИТЬ →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GAME STATE =====
+        const SAVE_KEY = 'tank_roguelike_save_v2';
+        const FUEL_REGEN_INTERVAL = 60000;
+        const MAX_FUEL = 20;
+
+        let gameState = loadGame();
+        let currentMission = null;
+        let selectedTankId = gameState.selectedTank;
+
+        // ===== IMAGE PRELOAD =====
+        const images = {};
+        const imageList = [
+            'assets/images/tank_1.png',
+            'assets/images/tank_2.png',
+            'assets/images/tank_3.png',
+            'assets/images/enemy_1.png',
+            'assets/images/enemy_2.png',
+            'assets/images/enemy_3.png',
+            'assets/images/boss_1.png',
+            'assets/images/boss_2.png',
+            'assets/images/boss_3.png'
+        ];
+
+        imageList.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            images[src] = img;
+        });
+
+        function getImg(src) {
+            return images[src] && images[src].complete ? images[src] : null;
+        }
+
+        // ===== AUDIO =====
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playShoot() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.12);
+            } catch (e) {}
+        }
+
+        function playExplosion() {
+            try {
+                const ctx = getAudioContext();
+                const bufferSize = ctx.sampleRate * 0.35;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                const gain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1200, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.35);
+                source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                source.start(ctx.currentTime);
+            } catch (e) {}
+        }
+
+        function playHit() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(90, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(25, ctx.currentTime + 0.06);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.06);
+            } catch (e) {}
+        }
+
+        function playVictory() {
+            try {
+                const ctx = getAudioContext();
+                [523, 659, 784, 1047].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.14);
+                    gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.14);
+                    gain.gain.linearRampToValueAtTime(0.16, ctx.currentTime + i * 0.14 + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.14 + 0.28);
+                    osc.start(ctx.currentTime + i * 0.14);
+                    osc.stop(ctx.currentTime + i * 0.14 + 0.28);
+                });
+            } catch (e) {}
+        }
+
+        function playDefeat() {
+            try {
+                const ctx = getAudioContext();
+                [380, 320, 260, 180].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.18);
+                    gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+                    gain.gain.linearRampToValueAtTime(0.13, ctx.currentTime + i * 0.18 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.18 + 0.35);
+                    osc.start(ctx.currentTime + i * 0.18);
+                    osc.stop(ctx.currentTime + i * 0.18 + 0.35);
+                });
+            } catch (e) {}
+        }
+
+        function playBuy() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(550, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.16, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.18);
+            } catch (e) {}
+        }
+
+        // ===== SAVE / LOAD =====
+        function getDefaultTanks() {
+            return [
+                { id: 'tank_light', name: 'Разведчик', image: 'assets/images/tank_1.png', stats: { hp: 80, maxHp: 80, damage: 10, speed: 4, fireRate: 3, armor: 5 }, level: 1, price: 0, owned: true, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } },
+                { id: 'tank_medium', name: 'Средний', image: 'assets/images/tank_2.png', stats: { hp: 120, maxHp: 120, damage: 15, speed: 3, fireRate: 2, armor: 15 }, level: 1, price: 500, owned: false, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } },
+                { id: 'tank_heavy', name: 'Тяжёлый', image: 'assets/images/tank_3.png', stats: { hp: 200, maxHp: 200, damage: 25, speed: 2, fireRate: 1.5, armor: 30 }, level: 1, price: 1500, owned: false, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } },
+                { id: 'tank_fast', name: 'Скоростной', image: 'assets/images/tank_1.png', stats: { hp: 60, maxHp: 60, damage: 8, speed: 6, fireRate: 5, armor: 0 }, level: 1, price: 800, owned: false, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } },
+                { id: 'tank_artillery', name: 'Артиллерия', image: 'assets/images/tank_2.png', stats: { hp: 100, maxHp: 100, damage: 40, speed: 1.5, fireRate: 0.8, armor: 10 }, level: 1, price: 2000, owned: false, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } },
+                { id: 'tank_boss', name: 'Дредноут', image: 'assets/images/boss_1.png', stats: { hp: 300, maxHp: 300, damage: 35, speed: 1.8, fireRate: 1.2, armor: 40 }, level: 1, price: 5000, owned: false, upgrades: { hp: 0, damage: 0, speed: 0, fireRate: 0, armor: 0 } }
+            ];
+        }
+
+        function generateMissions() {
+            const missions = [];
+            const names = ['Зачистка', 'Разведка', 'Штурм', 'Оборона', 'Прорыв', 'Засада', 'Рейд', 'Блокада', 'Десант', 'Финал'];
+            for (let i = 0; i < 50; i++) {
+                const floor = i + 1;
+                const difficulty = Math.floor(floor / 5) + 1;
+                missions.push({
+                    id: floor, name: `${names[i % names.length]} #${floor}`, floor, difficulty,
+                    enemies: 3 + Math.floor(floor * 0.8),
+                    reward: { gold: 50 + floor * 20, scrap: 10 + floor * 5, fuel: Math.max(1, 3 - Math.floor(floor / 10)) },
+                    completed: false, unlocked: i === 0
+                });
+            }
+            return missions;
+        }
+
+        function getDefaultState() {
+            return {
+                gold: 200, scrap: 50, fuel: MAX_FUEL, maxFuel: MAX_FUEL,
+                lastFuelUpdate: Date.now(), currentFloor: 1, selectedTank: 'tank_light',
+                tanks: getDefaultTanks(), missions: generateMissions(),
+                totalKills: 0, totalMissions: 0
+            };
+        }
+
+        function loadGame() {
+            try {
+                const saved = localStorage.getItem(SAVE_KEY);
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    const now = Date.now();
+                    const elapsed = now - state.lastFuelUpdate;
+                    const fuelRegen = Math.floor(elapsed / FUEL_REGEN_INTERVAL);
+                    if (fuelRegen > 0 && state.fuel < state.maxFuel) {
+                        state.fuel = Math.min(state.maxFuel, state.fuel + fuelRegen);
+                        state.lastFuelUpdate = now;
+                    }
+                    if (!state.missions || state.missions.length === 0) state.missions = generateMissions();
+                    if (!state.tanks || state.tanks.length === 0) state.tanks = getDefaultTanks();
+                    // update images if old save
+                    state.tanks.forEach(t => {
+                        if (!t.image || t.image.includes('tank_light')) {
+                            const map = {
+                                tank_light: 'assets/images/tank_1.png',
+                                tank_medium: 'assets/images/tank_2.png',
+                                tank_heavy: 'assets/images/tank_3.png',
+                                tank_fast: 'assets/images/tank_1.png',
+                                tank_artillery: 'assets/images/tank_2.png',
+                                tank_boss: 'assets/images/boss_1.png'
+                            };
+                            t.image = map[t.id] || t.image;
+                        }
+                    });
+                    return state;
+                }
+            } catch (e) { console.error('Load error:', e); }
+            return getDefaultState();
+        }
+
+        function saveGame() {
+            try {
+                gameState.lastFuelUpdate = Date.now();
+                localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+            } catch (e) { console.error('Save error:', e); }
+        }
+
+        function getUpgradeCost(level) { return 100 * level * level; }
+        function getUpgradeScrapCost(level) { return 20 * level; }
+        function getRepairCost(tank) { return Math.ceil((tank.stats.maxHp - tank.stats.hp) * 0.5); }
+
+        // ===== UI =====
+        function updateHeader() {
+            document.getElementById('goldDisplay').textContent = gameState.gold;
+            document.getElementById('scrapDisplay').textContent = gameState.scrap;
+            document.getElementById('fuelDisplay').textContent = `${gameState.fuel}/${gameState.maxFuel}`;
+        }
+
+        function updateMenuStats() {
+            document.getElementById('statMissions').textContent = gameState.totalMissions;
+            document.getElementById('statKills').textContent = gameState.totalKills;
+            document.getElementById('statFloor').textContent = gameState.currentFloor;
+            document.getElementById('statTanks').textContent = `${gameState.tanks.filter(t => t.owned).length}/${gameState.tanks.length}`;
+        }
+
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screen + 'Screen').classList.add('active');
+
+            const header = document.getElementById('mainHeader');
+            const navButtons = document.getElementById('navButtons');
+
+            if (screen === 'battle') {
+                header.style.display = 'none';
+            } else {
+                header.style.display = 'flex';
+                navButtons.style.display = 'flex';
+            }
+
+            if (screen === 'menu') updateMenuStats();
+            if (screen === 'missions') renderMissions();
+            if (screen === 'garage') renderGarage();
+
+            updateHeader();
+            saveGame();
+        }
+
+        // ===== MISSIONS =====
+        function renderMissions() {
+            document.getElementById('missionFloor').textContent = gameState.currentFloor;
+            document.getElementById('missionFuel').textContent = `${gameState.fuel}/${gameState.maxFuel}`;
+
+            const list = document.getElementById('missionList');
+            list.innerHTML = '';
+
+            gameState.missions.forEach(mission => {
+                const isCurrent = mission.unlocked && !mission.completed;
+                const canPlay = isCurrent && gameState.fuel >= 1;
+
+                const item = document.createElement('div');
+                item.className = `mission-item ${mission.completed ? 'completed' : isCurrent ? 'current' : mission.unlocked ? 'unlocked' : 'locked'}`;
+
+                item.innerHTML = `
+                    <div class="mission-info">
+                        <div class="name">${mission.completed ? '✅' : isCurrent ? '⚔' : mission.unlocked ? '🔓' : '🔒'} ${mission.name}</div>
+                        <div class="details">Этаж ${mission.floor} • ${'★'.repeat(Math.min(mission.difficulty, 5))} • 👾 ${mission.enemies}</div>
+                    </div>
+                    <div class="mission-reward">
+                        <div class="rewards">
+                            <span class="gold">💰${mission.reward.gold}</span>
+                            <span class="scrap">🔩${mission.reward.scrap}</span>
+                            ${mission.reward.fuel > 0 ? `<span class="fuel">⛽+${mission.reward.fuel}</span>` : ''}
+                        </div>
+                        ${isCurrent ? `<button class="btn ${canPlay ? 'btn-blue' : 'btn-gray'}" ${!canPlay ? 'disabled' : ''} onclick="startMission(${mission.id})">${gameState.fuel < 1 ? 'НЕТ ТОПЛИВА' : 'В БОЙ!'}</button>` : ''}
+                        ${mission.completed ? '<span style="font-size: 7px; color: #34d399;">✓ ПРОЙДЕНО</span>' : ''}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function startMission(missionId) {
+            if (gameState.fuel < 1) return;
+            const mission = gameState.missions.find(m => m.id === missionId);
+            if (!mission) return;
+
+            gameState.fuel--;
+            currentMission = mission;
+            saveGame();
+            showScreen('battle');
+            startBattle();
+        }
+
+        // ===== GARAGE =====
+        function renderGarage() {
+            const tankList = document.getElementById('tankList');
+            tankList.innerHTML = '';
+
+            gameState.tanks.forEach(tank => {
+                const item = document.createElement('div');
+                item.className = `tank-item ${tank.owned ? 'owned' : ''} ${selectedTankId === tank.id ? 'selected' : ''}`;
+                item.onclick = () => { if (tank.owned) { selectedTankId = tank.id; renderGarage(); } };
+
+                const imgTag = tank.owned
+                    ? `<img src="${tank.image}" alt="${tank.name}" onerror="this.style.display='none'">`
+                    : '🔒';
+
+                item.innerHTML = `
+                    <div class="tank-icon">${imgTag}</div>
+                    <div>
+                        <div class="tank-name">${tank.name}</div>
+                        <div class="tank-level">${tank.owned ? `Ур.${tank.level}` : `💰${tank.price}`}</div>
+                    </div>
+                `;
+                tankList.appendChild(item);
+            });
+
+            renderTankDetails();
+        }
+
+        function renderTankDetails() {
+            const tank = gameState.tanks.find(t => t.id === selectedTankId);
+            if (!tank) return;
+
+            const details = document.getElementById('tankDetails');
+
+            if (!tank.owned) {
+                details.innerHTML = `
+                    <div class="tank-details-card">
+                        <div class="tank-header">
+                            <div>
+                                <h3>${tank.name}</h3>
+                                <div class="level">Уровень ${tank.level}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 16px;">
+                            <div class="tank-icon" style="width: 64px; height: 64px; margin: 0 auto 12px;">
+                                <img src="${tank.image}" style="width:100%;height:100%;object-fit:contain;opacity:0.4;" onerror="this.parentElement.innerHTML='🔒'">
+                            </div>
+                            <p style="color: #64748b; margin-bottom: 10px; font-size: 9px;">Танк не куплен</p>
+                            <div style="font-size: 8px; color: #475569; margin-bottom: 14px;">
+                                HP:${tank.stats.maxHp} | Урон:${tank.stats.damage} | Скор:${tank.stats.speed}
+                            </div>
+                            <button class="btn ${gameState.gold >= tank.price ? 'btn-yellow' : 'btn-gray'}" ${gameState.gold < tank.price ? 'disabled' : ''} onclick="buyTank('${tank.id}')">
+                                КУПИТЬ 💰${tank.price}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const statLabels = {
+                    hp: { label: '❤ HP', color: '#60a5fa' },
+                    damage: { label: '💥 Урон', color: '#f87171' },
+                    speed: { label: '⚡ Скор', color: '#fbbf24' },
+                    fireRate: { label: '🔥 Огонь', color: '#fb923c' },
+                    armor: { label: '🛡 Броня', color: '#34d399' }
+                };
+
+                let upgradesHtml = '';
+                Object.keys(statLabels).forEach(stat => {
+                    const info = statLabels[stat];
+                    const level = tank.upgrades[stat];
+                    const goldCost = getUpgradeCost(level + 1);
+                    const scrapCost = getUpgradeScrapCost(level + 1);
+                    const canUpgrade = level < 10 && gameState.gold >= goldCost && gameState.scrap >= scrapCost;
+
+                    let dots = '';
+                    for (let i = 0; i < 10; i++) {
+                        dots += `<div class="upgrade-dot ${i < level ? 'filled' : 'empty'}"></div>`;
+                    }
+
+                    upgradesHtml += `
+                        <div class="upgrade-item">
+                            <div class="upgrade-info">
+                                <span>${info.label}</span>
+                                <div class="upgrade-dots">${dots}</div>
+                            </div>
+                            <button class="btn ${level >= 10 ? 'btn-gray' : canUpgrade ? 'btn-yellow' : 'btn-gray'}" style="font-size:7px;padding:6px 8px;" ${!canUpgrade ? 'disabled' : ''} onclick="upgradeTank('${tank.id}', '${stat}')">
+                                ${level >= 10 ? 'MAX' : `💰${goldCost}`}
+                            </button>
+                        </div>
+                    `;
+                });
+
+                const repairCost = getRepairCost(tank);
+                const needsRepair = tank.stats.hp < tank.stats.maxHp;
+
+                details.innerHTML = `
+                    <div class="tank-details-card">
+                        <div class="tank-header">
+                            <div>
+                                <h3>${tank.name}</h3>
+                                <div class="level">Уровень ${tank.level}</div>
+                            </div>
+                            <div>
+                                ${gameState.selectedTank === tank.id
+                                    ? '<span class="btn btn-green" style="padding: 6px 8px; font-size: 8px;">✓ АКТИВ</span>'
+                                    : `<button class="btn btn-blue" style="padding:6px 8px;font-size:8px;" onclick="selectTank('${tank.id}')">ВЫБРАТЬ</button>`}
+                            </div>
+                        </div>
+                        <div class="stats-bars">
+                            <div class="stat-bar">
+                                <div class="label">❤ HP</div>
+                                <div class="value" style="color: #60a5fa;">${tank.stats.hp}/${tank.stats.maxHp}</div>
+                                <div class="bar"><div class="bar-fill" style="width: ${(tank.stats.hp / tank.stats.maxHp) * 100}%; background: #60a5fa;"></div></div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="label">💥 Урон</div>
+                                <div class="value" style="color: #f87171;">${tank.stats.damage}</div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="label">⚡ Скор</div>
+                                <div class="value" style="color: #fbbf24;">${tank.stats.speed.toFixed(1)}</div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="label">🔥 Огонь</div>
+                                <div class="value" style="color: #fb923c;">${tank.stats.fireRate.toFixed(1)}</div>
+                            </div>
+                            <div class="stat-bar" style="grid-column: span 2;">
+                                <div class="label">🛡 Броня</div>
+                                <div class="value" style="color: #34d399;">${tank.stats.armor}%</div>
+                                <div class="bar"><div class="bar-fill" style="width: ${tank.stats.armor}%; background: #34d399;"></div></div>
+                            </div>
+                        </div>
+                        ${needsRepair ? `<button class="btn ${gameState.scrap >= repairCost ? 'btn-green' : 'btn-gray'}" style="width: 100%; margin-bottom: 10px; font-size: 8px;" ${gameState.scrap < repairCost ? 'disabled' : ''} onclick="repairTank('${tank.id}')">🔧 ПОЧИНИТЬ 🔩${repairCost}</button>` : ''}
+                        <div class="upgrades">
+                            <h4>⬆ УЛУЧШЕНИЯ</h4>
+                            ${upgradesHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function buyTank(tankId) {
+            const tank = gameState.tanks.find(t => t.id === tankId);
+            if (!tank || tank.owned || gameState.gold < tank.price) return;
+            playBuy();
+            gameState.gold -= tank.price;
+            gameState.tanks = gameState.tanks.map(t => t.id === tankId ? { ...t, owned: true } : t);
+            saveGame();
+            updateHeader();
+            renderGarage();
+        }
+
+        function upgradeTank(tankId, stat) {
+            const tank = gameState.tanks.find(t => t.id === tankId);
+            if (!tank || !tank.owned) return;
+            const currentLevel = tank.upgrades[stat];
+            const goldCost = getUpgradeCost(currentLevel + 1);
+            const scrapCost = getUpgradeScrapCost(currentLevel + 1);
+            if (gameState.gold < goldCost || gameState.scrap < scrapCost || currentLevel >= 10) return;
+
+            playBuy();
+            gameState.gold -= goldCost;
+            gameState.scrap -= scrapCost;
+            gameState.tanks = gameState.tanks.map(t => {
+                if (t.id !== tankId) return t;
+                const newUpgrades = { ...t.upgrades, [stat]: currentLevel + 1 };
+                const newStats = { ...t.stats };
+                switch (stat) {
+                    case 'hp': newStats.maxHp += 20; newStats.hp = Math.min(newStats.hp + 20, newStats.maxHp); break;
+                    case 'damage': newStats.damage += 3; break;
+                    case 'speed': newStats.speed += 0.3; break;
+                    case 'fireRate': newStats.fireRate += 0.3; break;
+                    case 'armor': newStats.armor = Math.min(80, newStats.armor + 5); break;
+                }
+                return { ...t, upgrades: newUpgrades, stats: newStats, level: Math.max(t.level, currentLevel + 1) };
+            });
+            saveGame();
+            updateHeader();
+            renderGarage();
+        }
+
+        function repairTank(tankId) {
+            const tank = gameState.tanks.find(t => t.id === tankId);
+            if (!tank || !tank.owned) return;
+            const cost = getRepairCost(tank);
+            if (gameState.scrap < cost || tank.stats.hp >= tank.stats.maxHp) return;
+            gameState.scrap -= cost;
+            gameState.tanks = gameState.tanks.map(t => t.id === tankId ? { ...t, stats: { ...t.stats, hp: t.stats.maxHp } } : t);
+            saveGame();
+            updateHeader();
+            renderGarage();
+        }
+
+        function selectTank(tankId) {
+            gameState.selectedTank = tankId;
+            saveGame();
+            renderGarage();
+        }
+
+        // ===== BATTLE =====
+        let battleGame = null;
+        let battleAnimFrame = null;
+
+        function startBattle() {
+            const canvas = document.getElementById('battleCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Fullscreen adaptive size
+            function resizeCanvas() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = Math.floor(rect.width);
+                canvas.height = Math.floor(rect.height);
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const W = () => canvas.width;
+            const H = () => canvas.height;
+            const MAP_W = 1400;
+            const MAP_H = 1000;
+
+            const selectedTank = gameState.tanks.find(t => t.id === gameState.selectedTank) || gameState.tanks[0];
+            const playerImg = getImg(selectedTank.image);
+
+            // Walls
+            const walls = [];
+            const gridSize = 64;
+            for (let x = 0; x < MAP_W; x += gridSize) {
+                walls.push({ x, y: 0, w: gridSize, h: gridSize, destructible: false, hp: 999 });
+                walls.push({ x, y: MAP_H - gridSize, w: gridSize, h: gridSize, destructible: false, hp: 999 });
+            }
+            for (let y = gridSize; y < MAP_H - gridSize; y += gridSize) {
+                walls.push({ x: 0, y, w: gridSize, h: gridSize, destructible: false, hp: 999 });
+                walls.push({ x: MAP_W - gridSize, y, w: gridSize, h: gridSize, destructible: false, hp: 999 });
+            }
+            for (let i = 0; i < 14 + currentMission.difficulty * 4; i++) {
+                const gx = gridSize + Math.floor(Math.random() * ((MAP_W - gridSize * 3) / gridSize)) * gridSize;
+                const gy = gridSize + Math.floor(Math.random() * ((MAP_H - gridSize * 3) / gridSize)) * gridSize;
+                if (gx < 220 && gy < 220) continue;
+                if (!walls.some(w => w.x === gx && w.y === gy)) {
+                    walls.push({ x: gx, y: gy, w: gridSize, h: gridSize, destructible: Math.random() > 0.35, hp: 45 + Math.random() * 35 });
+                }
+            }
+
+            // Enemies
+            const enemies = [];
+            const enemyTypes = [
+                { type: 'light', hp: 40, damage: 8, speed: 2.5, fireRate: 1.5, img: 'assets/images/enemy_1.png' },
+                { type: 'medium', hp: 80, damage: 14, speed: 1.8, fireRate: 1.2, img: 'assets/images/enemy_2.png' },
+                { type: 'heavy', hp: 160, damage: 22, speed: 1.2, fireRate: 0.8, img: 'assets/images/enemy_3.png' }
+            ];
+
+            // Bosses on high floors
+            const bossImgs = ['assets/images/boss_1.png', 'assets/images/boss_2.png', 'assets/images/boss_3.png'];
+
+            for (let i = 0; i < currentMission.enemies; i++) {
+                const isBoss = currentMission.difficulty >= 6 && Math.random() < 0.18;
+                let et, imgSrc;
+
+                if (isBoss) {
+                    et = { type: 'boss', hp: 220, damage: 28, speed: 1.4, fireRate: 1.0 };
+                    imgSrc = bossImgs[Math.floor(Math.random() * 3)];
+                } else {
+                    const maxType = Math.min(Math.floor(currentMission.difficulty / 2), 2);
+                    const typeIdx = Math.min(Math.floor(Math.random() * (maxType + 1)), 2);
+                    et = enemyTypes[typeIdx];
+                    imgSrc = et.img;
+                }
+
+                const diffMult = 1 + (currentMission.difficulty - 1) * 0.15;
+                let ex = 300, ey = 100;
+                let attempts = 0;
+                do {
+                    ex = 300 + Math.random() * (MAP_W - 400);
+                    ey = 100 + Math.random() * (MAP_H - 200);
+                    attempts++;
+                } while (attempts < 25 && walls.some(w => ex > w.x - 30 && ex < w.x + w.w + 30 && ey > w.y - 30 && ey < w.y + w.h + 30));
+
+                enemies.push({
+                    id: `enemy_${i}`, x: ex, y: ey,
+                    hp: Math.floor(et.hp * diffMult), maxHp: Math.floor(et.hp * diffMult),
+                    damage: Math.floor(et.damage * diffMult), speed: et.speed + Math.random() * 0.25,
+                    fireRate: et.fireRate, lastShot: 0, type: et.type,
+                    imgSrc, direction: Math.random() * Math.PI * 2, aiTimer: Math.random() * 2.5
+                });
+            }
+
+            battleGame = {
+                playerX: 140, playerY: MAP_H / 2, playerDir: 0,
+                playerHp: selectedTank.stats.hp, playerMaxHp: selectedTank.stats.maxHp,
+                playerSpeed: selectedTank.stats.speed * 60, playerDamage: selectedTank.stats.damage,
+                playerFireRate: selectedTank.stats.fireRate, playerArmor: selectedTank.stats.armor,
+                playerImg, lastPlayerShot: 0, enemies, bullets: [], particles: [], walls,
+                keys: new Set(), kills: 0, gameOver: false, won: false,
+                animFrame: 0, mouseX: W() / 2, mouseY: H() / 2, screenShake: 0,
+                cameraX: 0, cameraY: 0, MAP_W, MAP_H
+            };
+
+            // Events
+            const handleKeyDown = (e) => {
+                if (!battleGame) return;
+                battleGame.keys.add(e.key.toLowerCase());
+                if (e.key === ' ') e.preventDefault();
+            };
+            const handleKeyUp = (e) => { if (battleGame) battleGame.keys.delete(e.key.toLowerCase()); };
+            const handleMouseMove = (e) => {
+                if (!battleGame) return;
+                const rect = canvas.getBoundingClientRect();
+                battleGame.mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                battleGame.mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            };
+            const handleClick = (e) => {
+                if (!battleGame) return;
+                if (battleGame.gameOver) { endBattle(); return; }
+                playerShoot();
+            };
+            const handleTouchMove = (e) => {
+                if (!battleGame || e.touches.length === 0) return;
+                // aim toward relative touch if needed
+            };
+
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('click', handleClick);
+
+            function playerShoot() {
+                const g = battleGame;
+                if (!g || g.gameOver) return;
+                const now = Date.now();
+                if (now - g.lastPlayerShot < 1000 / g.playerFireRate) return;
+                g.lastPlayerShot = now;
+                playShoot();
+                const angle = g.playerDir;
+                g.bullets.push({
+                    x: g.playerX + Math.cos(angle) * 30,
+                    y: g.playerY + Math.sin(angle) * 30,
+                    dx: Math.cos(angle) * 11,
+                    dy: Math.sin(angle) * 11,
+                    damage: g.playerDamage, isPlayer: true
+                });
+                for (let i = 0; i < 5; i++) {
+                    g.particles.push({
+                        x: g.playerX + Math.cos(angle) * 32,
+                        y: g.playerY + Math.sin(angle) * 32,
+                        dx: Math.cos(angle + (Math.random() - 0.5) * 0.7) * (2 + Math.random() * 3),
+                        dy: Math.sin(angle + (Math.random() - 0.5) * 0.7) * (2 + Math.random() * 3),
+                        life: 12, maxLife: 12, color: '#fbbf24', size: 3 + Math.random() * 3
+                    });
+                }
+            }
+
+            function spawnExplosion(x, y, big) {
+                const g = battleGame;
+                if (!g) return;
+                const count = big ? 24 : 12;
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = big ? (2.5 + Math.random() * 5) : (1.2 + Math.random() * 3);
+                    const colors = ['#ef4444', '#f97316', '#fbbf24', '#fef08a', '#dc2626'];
+                    g.particles.push({
+                        x: x + (Math.random() - 0.5) * 14,
+                        y: y + (Math.random() - 0.5) * 14,
+                        dx: Math.cos(angle) * speed,
+                        dy: Math.sin(angle) * speed,
+                        life: big ? 45 : 28, maxLife: big ? 45 : 28,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: big ? (4 + Math.random() * 6) : (2 + Math.random() * 4)
+                    });
+                }
+                g.screenShake = big ? 14 : 7;
+            }
+
+            function rectCollides(x, y, size, walls) {
+                for (const wall of walls) {
+                    if (x + size > wall.x && x - size < wall.x + wall.w && y + size > wall.y && y - size < wall.y + wall.h) return true;
+                }
+                return false;
+            }
+
+            let lastTime = performance.now();
+
+            function gameLoop(timestamp) {
+                if (!battleGame) return;
+                const g = battleGame;
+                const rawDt = (timestamp - lastTime) / 1000;
+                const dt = Math.min(rawDt, 0.05);
+                lastTime = timestamp;
+                g.animFrame++;
+
+                const cW = W();
+                const cH = H();
+
+                // Camera
+                const targetCamX = g.playerX - cW / 2;
+                const targetCamY = g.playerY - cH / 2;
+                g.cameraX += (targetCamX - g.cameraX) * 0.12;
+                g.cameraY += (targetCamY - g.cameraY) * 0.12;
+                g.cameraX = Math.max(0, Math.min(g.MAP_W - cW, g.cameraX));
+                g.cameraY = Math.max(0, Math.min(g.MAP_H - cH, g.cameraY));
+
+                if (!g.gameOver) {
+                    // Movement
+                    let dx = 0, dy = 0;
+                    if (g.keys.has('w') || g.keys.has('ц') || g.keys.has('arrowup')) dy -= 1;
+                    if (g.keys.has('s') || g.keys.has('ы') || g.keys.has('arrowdown')) dy += 1;
+                    if (g.keys.has('a') || g.keys.has('ф') || g.keys.has('arrowleft')) dx -= 1;
+                    if (g.keys.has('d') || g.keys.has('в') || g.keys.has('arrowright')) dx += 1;
+
+                    if (dx !== 0 || dy !== 0) {
+                        const len = Math.sqrt(dx * dx + dy * dy);
+                        const moveX = (dx / len) * g.playerSpeed * dt;
+                        const moveY = (dy / len) * g.playerSpeed * dt;
+                        if (!rectCollides(g.playerX + moveX, g.playerY, 18, g.walls)) g.playerX += moveX;
+                        if (!rectCollides(g.playerX, g.playerY + moveY, 18, g.walls)) g.playerY += moveY;
+                    }
+
+                    // Aim
+                    const worldMouseX = g.mouseX + g.cameraX;
+                    const worldMouseY = g.mouseY + g.cameraY;
+                    g.playerDir = Math.atan2(worldMouseY - g.playerY, worldMouseX - g.playerX);
+
+                    if (g.keys.has(' ')) playerShoot();
+
+                    // AI
+                    const now = Date.now();
+                    for (const enemy of g.enemies) {
+                        const distToPlayer = Math.hypot(g.playerX - enemy.x, g.playerY - enemy.y);
+                        enemy.aiTimer -= dt;
+                        if (enemy.aiTimer <= 0) {
+                            enemy.aiTimer = 1.3 + Math.random() * 1.7;
+                            if (distToPlayer < 380) {
+                                const angleToPlayer = Math.atan2(g.playerY - enemy.y, g.playerX - enemy.x);
+                                enemy.direction = angleToPlayer + (Math.random() - 0.5) * 0.5;
+                            } else {
+                                enemy.direction = Math.random() * Math.PI * 2;
+                            }
+                        }
+
+                        const speed = enemy.speed * 60 * dt;
+                        const ex = enemy.x + Math.cos(enemy.direction) * speed;
+                        const ey = enemy.y + Math.sin(enemy.direction) * speed;
+                        if (!rectCollides(ex, ey, 18, g.walls)) {
+                            enemy.x = ex; enemy.y = ey;
+                        } else {
+                            enemy.direction = Math.random() * Math.PI * 2;
+                            enemy.aiTimer = 0.35;
+                        }
+
+                        if (distToPlayer < 450 && now - enemy.lastShot > 1000 / enemy.fireRate) {
+                            enemy.lastShot = now;
+                            const angle = Math.atan2(g.playerY - enemy.y, g.playerX - enemy.x);
+                            const spread = enemy.type === 'heavy' || enemy.type === 'boss' ? 0.04 : 0.13;
+                            const bulletAngle = angle + (Math.random() - 0.5) * spread;
+                            g.bullets.push({
+                                x: enemy.x + Math.cos(bulletAngle) * 24,
+                                y: enemy.y + Math.sin(bulletAngle) * 24,
+                                dx: Math.cos(bulletAngle) * 6.5,
+                                dy: Math.sin(bulletAngle) * 6.5,
+                                damage: enemy.damage, isPlayer: false
+                            });
+                        }
+                    }
+
+                    // Bullets
+                    g.bullets = g.bullets.filter(b => {
+                        b.x += b.dx * 60 * dt;
+                        b.y += b.dy * 60 * dt;
+                        if (b.x < 0 || b.x > g.MAP_W || b.y < 0 || b.y > g.MAP_H) return false;
+
+                        for (let i = g.walls.length - 1; i >= 0; i--) {
+                            const wall = g.walls[i];
+                            if (b.x > wall.x && b.x < wall.x + wall.w && b.y > wall.y && b.y < wall.y + wall.h) {
+                                if (wall.destructible) {
+                                    wall.hp -= b.damage;
+                                    if (wall.hp <= 0) {
+                                        spawnExplosion(wall.x + wall.w / 2, wall.y + wall.h / 2, false);
+                                        playHit();
+                                        g.walls.splice(i, 1);
+                                    }
+                                }
+                                return false;
+                            }
+                        }
+
+                        if (b.isPlayer) {
+                            for (let i = g.enemies.length - 1; i >= 0; i--) {
+                                const e = g.enemies[i];
+                                if (Math.hypot(b.x - e.x, b.y - e.y) < 24) {
+                                    e.hp -= b.damage;
+                                    playHit();
+                                    if (e.hp <= 0) {
+                                        playExplosion();
+                                        spawnExplosion(e.x, e.y, true);
+                                        g.enemies.splice(i, 1);
+                                        g.kills++;
+                                    }
+                                    return false;
+                                }
+                            }
+                        } else {
+                            if (Math.hypot(b.x - g.playerX, b.y - g.playerY) < 20) {
+                                g.playerHp -= Math.max(1, b.damage * (1 - g.playerArmor / 100));
+                                playHit();
+                                g.screenShake = 5;
+                                if (g.playerHp <= 0) {
+                                    g.playerHp = 0;
+                                    g.gameOver = true;
+                                    g.won = false;
+                                    playExplosion();
+                                    spawnExplosion(g.playerX, g.playerY, true);
+                                }
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+
+                    g.particles = g.particles.filter(p => {
+                        p.x += p.dx; p.y += p.dy;
+                        p.dx *= 0.9; p.dy *= 0.9;
+                        p.life--;
+                        return p.life > 0;
+                    });
+                    if (g.screenShake > 0) g.screenShake *= 0.82;
+                    if (g.screenShake < 0.15) g.screenShake = 0;
+
+                    if (g.enemies.length === 0 && !g.gameOver) {
+                        g.gameOver = true;
+                        g.won = true;
+                    }
+                }
+
+                // ===== RENDER =====
+                ctx.save();
+                if (g.screenShake > 0) {
+                    ctx.translate(
+                        (Math.random() - 0.5) * g.screenShake * 2,
+                        (Math.random() - 0.5) * g.screenShake * 2
+                    );
+                }
+
+                // Background
+                ctx.fillStyle = '#080a10';
+                ctx.fillRect(0, 0, cW, cH);
+
+                ctx.save();
+                ctx.translate(-g.cameraX, -g.cameraY);
+
+                // Grid
+                ctx.strokeStyle = '#12151f';
+                ctx.lineWidth = 1;
+                const startX = Math.floor(g.cameraX / 64) * 64;
+                const startY = Math.floor(g.cameraY / 64) * 64;
+                for (let x = startX; x < g.cameraX + cW + 64; x += 64) {
+                    ctx.beginPath(); ctx.moveTo(x, g.cameraY); ctx.lineTo(x, g.cameraY + cH); ctx.stroke();
+                }
+                for (let y = startY; y < g.cameraY + cH + 64; y += 64) {
+                    ctx.beginPath(); ctx.moveTo(g.cameraX, y); ctx.lineTo(g.cameraX + cW, y); ctx.stroke();
+                }
+
+                // Walls
+                for (const wall of g.walls) {
+                    if (wall.x + wall.w < g.cameraX - 10 || wall.x > g.cameraX + cW + 10 ||
+                        wall.y + wall.h < g.cameraY - 10 || wall.y > g.cameraY + cH + 10) continue;
+
+                    if (wall.destructible) {
+                        const hpRatio = Math.max(0.25, wall.hp / 80);
+                        ctx.fillStyle = `rgb(${Math.floor(65 * hpRatio + 25)}, ${Math.floor(38 * hpRatio + 12)}, ${Math.floor(18 * hpRatio + 6)})`;
+                        ctx.fillRect(wall.x + 2, wall.y + 2, wall.w - 4, wall.h - 4);
+                        ctx.strokeStyle = '#7a4a22';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(wall.x + 2, wall.y + 2, wall.w - 4, wall.h - 4);
+                    } else {
+                        ctx.fillStyle = '#1a2030';
+                        ctx.fillRect(wall.x + 2, wall.y + 2, wall.w - 4, wall.h - 4);
+                        ctx.strokeStyle = '#2d3748';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(wall.x + 2, wall.y + 2, wall.w - 4, wall.h - 4);
+                    }
+                }
+
+                // Particles
+                for (const p of g.particles) {
+                    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                    ctx.fillStyle = p.color;
+                    const s = Math.ceil(p.size * (p.life / p.maxLife));
+                    ctx.fillRect(Math.floor(p.x - s / 2), Math.floor(p.y - s / 2), s, s);
+                }
+                ctx.globalAlpha = 1;
+
+                // Bullets
+                for (const b of g.bullets) {
+                    ctx.fillStyle = b.isPlayer ? '#22d3ee' : '#f87171';
+                    ctx.fillRect(Math.floor(b.x - 3), Math.floor(b.y - 3), 7, 7);
+                }
+
+                // Enemies
+                for (const enemy of g.enemies) {
+                    if (enemy.x < g.cameraX - 60 || enemy.x > g.cameraX + cW + 60 ||
+                        enemy.y < g.cameraY - 60 || enemy.y > g.cameraY + cH + 60) continue;
+
+                    const angle = Math.atan2(g.playerY - enemy.y, g.playerX - enemy.x);
+                    const img = getImg(enemy.imgSrc);
+
+                    ctx.save();
+                    ctx.translate(enemy.x, enemy.y);
+                    ctx.rotate(angle);
+
+                    if (img) {
+                        const size = enemy.type === 'boss' ? 56 : 48;
+                        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+                    } else {
+                        // fallback
+                        ctx.fillStyle = enemy.type === 'boss' ? '#7f1d1d' : '#c0392b';
+                        ctx.fillRect(-20, -16, 40, 32);
+                    }
+
+                    ctx.restore();
+
+                    // HP bar
+                    const hpPercent = enemy.hp / enemy.maxHp;
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(enemy.x - 18, enemy.y - 30, 36, 6);
+                    ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#eab308' : '#ef4444';
+                    ctx.fillRect(enemy.x - 17, enemy.y - 29, 34 * hpPercent, 4);
+                }
+
+                // Player
+                if (!g.gameOver || g.animFrame % 8 < 4) {
+                    ctx.save();
+                    ctx.translate(g.playerX, g.playerY);
+                    ctx.rotate(g.playerDir);
+
+                    if (g.playerImg) {
+                        ctx.drawImage(g.playerImg, -28, -28, 56, 56);
+                    } else {
+                        // fallback pixel tank
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(-22, -19, 44, 8);
+                        ctx.fillRect(-22, 11, 44, 8);
+                        ctx.fillStyle = '#1d4ed8';
+                        ctx.fillRect(-20, -16, 40, 32);
+                        ctx.fillStyle = '#1e3a8a';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(8, -5, 24, 10);
+                    }
+
+                    ctx.restore();
+                }
+
+                ctx.restore(); // camera
+
+                // ===== HUD =====
+                const hudY = cH - 52;
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.fillRect(10, hudY, 230, 40);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(16, hudY + 8, 218, 24);
+                const playerHpPercent = g.playerHp / g.playerMaxHp;
+                ctx.fillStyle = playerHpPercent > 0.5 ? '#22c55e' : playerHpPercent > 0.25 ? '#eab308' : '#ef4444';
+                ctx.fillRect(17, hudY + 9, 216 * playerHpPercent, 22);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px "Press Start 2P", monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(`HP ${Math.ceil(g.playerHp)}/${g.playerMaxHp}`, 22, hudY + 26);
+
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.fillRect(cW - 180, 10, 170, 36);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 11px "Press Start 2P", monospace';
+                ctx.textAlign = 'right';
+                ctx.fillText(`УБИТО ${g.kills}/${currentMission.enemies}`, cW - 16, 33);
+
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.fillRect(10, 10, 200, 32);
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 10px "Press Start 2P", monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(`ЭТАЖ ${currentMission.floor}`, 16, 31);
+
+                if (g.gameOver) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+                    ctx.fillRect(0, 0, cW, cH);
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = g.won ? '#34d399' : '#ef4444';
+                    ctx.font = 'bold 26px "Press Start 2P", monospace';
+                    ctx.fillText(g.won ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ', cW / 2, cH / 2 - 24);
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '10px "Press Start 2P", monospace';
+                    ctx.fillText('НАЖМИТЕ ДЛЯ ПРОДОЛЖЕНИЯ', cW / 2, cH / 2 + 28);
+                    ctx.textAlign = 'left';
+                }
+
+                ctx.restore();
+
+                if (!g.gameOver) {
+                    battleAnimFrame = requestAnimationFrame(gameLoop);
+                }
+            }
+
+            battleAnimFrame = requestAnimationFrame(gameLoop);
+
+            battleGame.cleanup = () => {
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('keyup', handleKeyUp);
+                window.removeEventListener('resize', resizeCanvas);
+                canvas.removeEventListener('mousemove', handleMouseMove);
+                canvas.removeEventListener('click', handleClick);
+                if (battleAnimFrame) cancelAnimationFrame(battleAnimFrame);
+            };
+        }
+
+        function endBattle() {
+            if (!battleGame) return;
+            const won = battleGame.won;
+            const kills = battleGame.kills;
+
+            if (battleGame.cleanup) battleGame.cleanup();
+            battleGame = null;
+
+            if (won && currentMission) {
+                playVictory();
+                gameState.gold += currentMission.reward.gold;
+                gameState.scrap += currentMission.reward.scrap;
+                gameState.fuel = Math.min(gameState.maxFuel, gameState.fuel + currentMission.reward.fuel);
+                gameState.missions = gameState.missions.map(m => {
+                    if (m.id === currentMission.id) return { ...m, completed: true };
+                    if (m.id === currentMission.id + 1) return { ...m, unlocked: true };
+                    return m;
+                });
+                gameState.totalKills += kills;
+                gameState.totalMissions++;
+                gameState.currentFloor = Math.max(gameState.currentFloor, currentMission.id + 1);
+
+                document.getElementById('resultScreen').className = 'screen result victory';
+                document.getElementById('resultIcon').textContent = '🏆';
+                document.getElementById('resultTitle').textContent = 'ПОБЕДА!';
+                document.getElementById('rewardGold').textContent = '+' + currentMission.reward.gold;
+                document.getElementById('rewardScrap').textContent = '+' + currentMission.reward.scrap;
+                document.getElementById('rewardCard').style.display = 'block';
+            } else {
+                playDefeat();
+                document.getElementById('resultScreen').className = 'screen result defeat';
+                document.getElementById('resultIcon').textContent = '💀';
+                document.getElementById('resultTitle').textContent = 'ПОРАЖЕНИЕ';
+                document.getElementById('rewardCard').style.display = 'none';
+            }
+
+            saveGame();
+            showScreen('result');
+        }
+
+        function exitBattle() {
+            if (confirm('Покинуть миссию? Прогресс не сохранится.')) {
+                if (battleGame && battleGame.cleanup) battleGame.cleanup();
+                battleGame = null;
+                showScreen('missions');
+            }
+        }
+
+        // ===== MOBILE =====
+        const joystick = document.getElementById('joystick');
+        const joystickStick = document.getElementById('joystickStick');
+        const shootBtn = document.getElementById('shootBtn');
+        let joystickActive = false;
+
+        if (joystick) {
+            joystick.addEventListener('touchstart', (e) => { e.preventDefault(); joystickActive = true; }, { passive: false });
+            joystick.addEventListener('touchmove', (e) => {
+                if (!joystickActive || !battleGame) return;
+                e.preventDefault();
+                const rect = joystick.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const touch = e.touches[0];
+                let dx = touch.clientX - centerX;
+                let dy = touch.clientY - centerY;
+                const maxDist = 44;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+                joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+
+                battleGame.keys.delete('w'); battleGame.keys.delete('s');
+                battleGame.keys.delete('a'); battleGame.keys.delete('d');
+                if (dy < -12) battleGame.keys.add('w');
+                if (dy > 12) battleGame.keys.add('s');
+                if (dx < -12) battleGame.keys.add('a');
+                if (dx > 12) battleGame.keys.add('d');
+            }, { passive: false });
+            joystick.addEventListener('touchend', () => {
+                joystickActive = false;
+                joystickStick.style.transform = 'translate(0, 0)';
+                if (battleGame) {
+                    battleGame.keys.delete('w'); battleGame.keys.delete('s');
+                    battleGame.keys.delete('a'); battleGame.keys.delete('d');
+                }
+            });
+        }
+
+        if (shootBtn) {
+            shootBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (battleGame) battleGame.keys.add(' ');
+            }, { passive: false });
+            shootBtn.addEventListener('touchend', () => {
+                if (battleGame) battleGame.keys.delete(' ');
+            });
+        }
+
+        // ===== FUEL REGEN =====
+        setInterval(() => {
+            const now = Date.now();
+            const elapsed = now - gameState.lastFuelUpdate;
+            const fuelRegen = Math.floor(elapsed / FUEL_REGEN_INTERVAL);
+            if (fuelRegen > 0 && gameState.fuel < gameState.maxFuel) {
+                gameState.fuel = Math.min(gameState.maxFuel, gameState.fuel + fuelRegen);
+                gameState.lastFuelUpdate = now;
+                saveGame();
+                updateHeader();
+            }
+        }, 5000);
+
+        // ===== INIT =====
+        updateHeader();
+        updateMenuStats();
+    </script>
+</body>
+</html>
