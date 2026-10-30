@@ -210,3 +210,56 @@ html, body {
   .hud .pill { padding: 4px 10px; font-size: .75rem; }
   .site-footer { font-size: .65rem; }
 }
+
+/* Final stats polish */
+.stats-final hr {
+    border: none;
+    border-top: 1px dashed #4a2c6b;
+    margin: 12px auto;
+    max-width: 240px;
+  }
+  .stats-final b {
+    color: #ffb347;
+    font-weight: 900;
+  }
+
+  /* Стартовый экран — текст поверх анимированного канваса */
+#startScreen, #endScreen {
+    background: rgba(8, 3, 16, 0.55);
+    backdrop-filter: blur(2px);
+  }
+  #startScreen .game-title,
+  #startScreen .subtitle,
+  #startScreen .rules,
+  #startScreen .btn {
+    text-shadow: 0 2px 12px #000;
+  }
+
+  /* Best rank in menu */
+.best-rank {
+    font-size: clamp(0.9rem, 2vw, 1.05rem);
+    margin-bottom: 14px;
+    padding: 8px 20px;
+    background: rgba(30, 16, 48, 0.7);
+    border: 1px solid #6a3fa0;
+    border-radius: 999px;
+    box-shadow: inset 0 0 12px #6a2c9c33;
+    backdrop-filter: blur(4px);
+    font-weight: 700;
+  }
+  
+  /* Меню — текст поверх талисмана */
+  #startScreen {
+    background: linear-gradient(180deg,
+      rgba(8, 3, 16, 0.92) 0%,
+      rgba(8, 3, 16, 0.55) 45%,
+      rgba(8, 3, 16, 0.92) 100%);
+    backdrop-filter: none;
+  }
+  #startScreen .game-title,
+  #startScreen .subtitle,
+  #startScreen .rules,
+  #startScreen .best-rank,
+  #startScreen .btn {
+    text-shadow: 0 2px 12px #000, 0 0 20px #000;
+  }

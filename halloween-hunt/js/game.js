@@ -3,7 +3,7 @@
 const Game = {
     canvas: null,
     ctx: null,
-    state: 'idle', // idle | playing | ending | over
+    state: 'idle',
     items: [],
     particles: [],
     rings: [],
@@ -17,7 +17,10 @@ const Game = {
     sceneW: 0,
     sceneH: 0,
     DPR: 1,
-    onEnd: null, // callback(win)
+    // бонус
+    bonusItem: null,
+    bonusTimer: 0,          // сколько ещё ждать до следующего бонуса
+    bonusOnField: false,    // бонус сейчас на сцене
   };
   
   function resizeCanvas() {
@@ -34,40 +37,12 @@ const Game = {
   
   function drawBackground() {
     const { ctx, sceneW, sceneH, globalTime } = Game;
-    const g = ctx.createRadialGradient(sceneW*0.5, sceneH*0.2, sceneH*0.1, sceneW*0.5, sceneH*0.5, sceneH*1.1);
-    g.addColorStop(0, '#1e1030');
-    g.addColorStop(0.5, '#140a22');
-    g.addColorStop(1, '#08040e');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, sceneW, sceneH);
-  
-    // fog blobs
-    ctx.save();
-    ctx.globalAlpha = 0.08;
-    for (let i = 0; i < 6; i++) {
-      const t = globalTime * 0.15 + i * 1.7;
-      const x = sceneW * (0.15 + 0.14 * i) + Math.sin(t) * 50;
-      const y = sceneH * (0.25 + 0.12 * (i % 3)) + Math.cos(t * 0.8) * 30;
-      const rg = ctx.createRadialGradient(x, y, 10, x, y, 180);
-      rg.addColorStop(0, '#7c4dff');
-      rg.addColorStop(1, 'transparent');
-      ctx.fillStyle = rg;
-      ctx.beginPath();
-      ctx.arc(x, y, 180, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
-  
-    // vignette
-    const vg = ctx.createRadialGradient(sceneW/2, sceneH/2, Math.min(sceneW, sceneH)*0.35, sceneW/2, sceneH/2, Math.max(sceneW, sceneH)*0.75);
-    vg.addColorStop(0, 'transparent');
-    vg.addColorStop(1, 'rgba(0,0,0,0.6)');
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, sceneW, sceneH);
+    currentBackground.draw(ctx, sceneW, sceneH, globalTime);
   }
   
   function drawItems() {
-    const { ctx, items, globalTime } = Game;
+    const { ctx, items, globalTime, bonusItem } = Game;
+  
     for (const item of items) {
       if (item.found) continue;
   
@@ -92,6 +67,22 @@ const Game = {
       item.type.draw(item.r, item);
       ctx.restore();
     }
+  
+    // Бонус-звезда
+    if (bonusItem && !bonusItem.found) {
+      const ratio = bonusItem.bonusLife / bonusItem.bonusMaxLife;
+      let alpha = 1;
+      if (ratio < 0.3) {
+        alpha = 0.4 + 0.6 * Math.abs(Math.sin(globalTime * 16));
+      }
+  
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(bonusItem.x, bonusItem.y);
+      const pulse = 1 + Math.sin(bonusItem.pulsePhase) * 0.12;
+      drawBonusStar(bonusItem.r, bonusItem.rotation, pulse);
+      ctx.restore();
+    }
   }
   
   function drawScene() {
@@ -112,6 +103,26 @@ const Game = {
     for (const item of g.items) {
       if (item.appear < 1) item.appear = Math.min(1, (g.globalTime - item.appearDelay) / 0.5);
     }
+  
+    // ---- Бонус ----
+    if (g.bonusItem && !g.bonusItem.found) {
+        g.bonusItem.appear = Math.min(1, g.bonusItem.appear + dt / 0.3);
+        g.bonusItem.bonusLife -= dt;
+        updateBonusMovement(g.bonusItem, g.sceneW, g.sceneH, dt);
+        if (g.bonusItem.bonusLife <= 0) {
+          // исчез — упустили
+          spawnBurst(g.particles, g.bonusItem.x, g.bonusItem.y, '#666', 10, 2);
+          g.bonusItem = null;
+          g.bonusOnField = false;
+          g.bonusTimer = rand(6, 12);
+        }
+      } else if (!g.bonusOnField) {
+        g.bonusTimer -= dt;
+        if (g.bonusTimer <= 0) {
+          g.bonusItem = spawnBonus(g.sceneW, g.sceneH, g.items);
+          g.bonusOnField = true;
+        }
+      }
   
     updateParticles(g.particles, dt);
     updateRings(g.rings, dt);
@@ -141,6 +152,28 @@ const Game = {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
   
+    // сначала проверяем бонус (он рисуется сверху)
+    if (g.bonusItem && !g.bonusItem.found) {
+        const b = g.bonusItem;
+        if (Math.hypot(mx - b.x, my - b.y) < b.r * 1.5) {
+          b.found = true;
+          const bonusPoints = 60;
+          g.score += bonusPoints;
+          spawnBurst(g.particles, b.x, b.y, '#ffd700', 35, 8);
+          spawnBurst(g.particles, b.x, b.y, '#fff', 18, 5);
+          spawnRing(g.rings, b.x, b.y, '#ffd700');
+          spawnRing(g.rings, b.x, b.y, '#fff8e1');
+          floatText(`+${bonusPoints} BONUS!`, b.x, b.y, '#ffd700');
+          soundWin();
+          updateHUD();
+          g.bonusItem = null;
+          g.bonusOnField = false;
+          g.bonusTimer = rand(7, 14);
+          return;
+        }
+      }
+  
+    // обычный поиск
     let hit = null;
     for (let i = g.items.length - 1; i >= 0; i--) {
       const item = g.items[i];
@@ -160,7 +193,7 @@ const Game = {
       soundGood();
       updateHUD();
   
-      if (g.foundCount >= CONFIG.TOTAL_TARGETS) {
+      if (g.foundCount >= TARGET_TYPES.length) {
         setTimeout(() => endGame(true), 500);
       }
     } else {
@@ -193,8 +226,12 @@ const Game = {
     g.particles = [];
     g.rings = [];
     g.globalTime = 0;
+    g.bonusItem = null;
+    g.bonusOnField = false;
+    g.bonusTimer = rand(4, 7);  // первый бонус через 4-7 сек
   
     resizeCanvas();
+    pickRandomBackground();
     g.items = generateScene(g.sceneW, g.sceneH);
     updateHUD();
   
@@ -223,7 +260,7 @@ const Game = {
   
       const endTitle = document.getElementById('endTitle');
       const endStats = document.getElementById('endStats');
-      const endScr = document.getElementById('endScreen');
+      const endScr   = document.getElementById('endScreen');
   
       let title, titleColor;
       if (win) {
@@ -236,27 +273,37 @@ const Game = {
         title = "Time's Up!";
         titleColor = '#ff8c42';
       }
-  
       endTitle.textContent = title;
       endTitle.style.color = titleColor;
       endTitle.style.textShadow = `0 0 20px ${titleColor}aa`;
   
-      let rank, rankColor;
-      if (g.foundCount === CONFIG.TOTAL_TARGETS) {
-        rank = '🏆 Halloween Legend!'; rankColor = '#ffd700';
-      } else if (g.foundCount >= 5) {
-        rank = '🌟 Expert Hunter'; rankColor = '#7CFC00';
-      } else if (g.foundCount >= 3) {
-        rank = '🎃 Rookie Hunter'; rankColor = '#ff8c42';
-      } else {
-        rank = '🕸️ Unlucky Hunt'; rankColor = '#ff5555';
-      }
+      /* ---- Бонус/штраф за время ---- */
+      const timeLeftSec = Math.max(0, Math.ceil(g.timeLeft));
+      const timeBonus   = timeLeftSec * CONFIG.TIME_PENALTY;
+      const finalScore  = win ? (g.score + timeBonus) : (g.score - timeBonus);
+      const clampedScore = Math.max(0, finalScore);
+  
+      /* ---- Звание и рекорд ---- */
+      const rank = getRankForScore(clampedScore);
+      const isNewRecord = saveBestRank(clampedScore, rank.name);
+  
+      const timeSign  = win ? '+' : '−';
+      const timeColor = win ? '#7CFC00' : '#ff5555';
+      const best = loadBestRank();
+      const bestLine = best
+        ? `<div style="margin-top:10px; font-size:0.9rem; color:#b39ddb;">Best: <b style="color:${getRankForScore(best.score).color};">${best.rankName}</b> (${best.score})</div>`
+        : '';
   
       endStats.innerHTML = `
-        Halloween items found: <b>${g.foundCount} / ${CONFIG.TOTAL_TARGETS}</b><br>
-        Final score: <b>${g.score}</b><br>
-        Lives left: <b>${'🎃'.repeat(Math.max(0, g.lives)) || '—'}</b><br>
-        <span style="color:${rankColor}; font-size:1.25rem; display:inline-block; margin-top:8px;">${rank}</span>
+        Halloween items found: <b>${g.foundCount} / ${TARGET_TYPES.length}</b><br>
+        Base score: <b>${g.score}</b><br>
+        Time left: <b>${timeLeftSec}s</b>
+        <span style="color:${timeColor}"> (${timeSign}${timeBonus})</span><br>
+        <hr style="border:none; border-top:1px dashed #4a2c6b; margin:10px auto; max-width:240px;">
+        Final score: <b style="font-size:1.25rem;">${clampedScore}</b>
+        ${isNewRecord ? '<span style="color:#ffd700; font-size:1rem; margin-left:8px;">★ NEW RECORD</span>' : ''}<br>
+        <span style="color:${rank.color}; font-size:1.3rem; display:inline-block; margin-top:10px; font-weight:900; text-shadow:0 0 14px ${rank.color}88;">${rank.name}</span>
+        ${bestLine}
       `;
   
       endScr.classList.remove('hidden');
@@ -267,7 +314,7 @@ const Game = {
   function updateHUD() {
     const g = Game;
     document.getElementById('found').textContent = g.foundCount;
-    document.getElementById('total').textContent = CONFIG.TOTAL_TARGETS;
+    document.getElementById('total').textContent = TARGET_TYPES.length;
     document.getElementById('score').textContent = g.score;
     document.getElementById('timer').textContent = Math.ceil(g.timeLeft);
     document.getElementById('lives').textContent =

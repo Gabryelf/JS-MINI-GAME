@@ -85,3 +85,34 @@ function floatText(text, x, y, color) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 950);
 }
+
+/* ====================== BEST RANK STORAGE ====================== */
+
+const STORAGE_KEY = 'halloween_hunt_best_rank';
+
+function saveBestRank(score, rankName) {
+  try {
+    const prev = loadBestRank();
+    if (!prev || score > prev.score) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        score,
+        rankName,
+        date: Date.now(),
+      }));
+      return true; // новый рекорд
+    }
+  } catch (e) {
+    console.warn('localStorage unavailable', e);
+  }
+  return false;
+}
+
+function loadBestRank() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (typeof data.score === 'number' && typeof data.rankName === 'string') return data;
+  } catch (e) {}
+  return null;
+}

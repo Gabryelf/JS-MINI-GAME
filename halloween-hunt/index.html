@@ -25,16 +25,16 @@
 
 <!-- Start Screen -->
 <div class="overlay" id="startScreen">
-  <h1 class="game-title">Halloween Hunt</h1>
-  <p class="subtitle">Click on the spooky items. Ordinary ones crumble and cost you points!</p>
-  <p class="rules">
-    Find <b class="good">+10 points</b> for every Halloween item.<br>
-    Clicking an ordinary object costs <b class="bad">−5 points</b> and <b class="bad">−1 life</b>.<br>
-    Items can hide behind each other — look carefully!
-  </p>
-  <div class="target-list" id="previewList"></div>
-  <button class="btn" id="startBtn">Start the Hunt</button>
-</div>
+    <h1 class="game-title">Halloween Hunt</h1>
+    <p class="subtitle">Click on the spooky items. Ordinary ones crumble and cost you points!</p>
+    <div id="bestRank" class="best-rank"></div>
+    <p class="rules">
+      Find <b class="good">+20 points</b> for every hidden Halloween item.<br>
+      Clicking an ordinary object costs <b class="bad">−10 points</b> and <b class="bad">−1 life</b>.<br>
+      Catch the <b style="color:#ffd700">flying golden star</b> for <b style="color:#ffd700">+60</b> points!
+    </p>
+    <button class="btn" id="startBtn">Start the Hunt</button>
+  </div>
 
 <!-- End Screen -->
 <div class="overlay hidden" id="endScreen">
@@ -49,6 +49,7 @@
 <script src="js/audio.js"></script>
 <script src="js/drawing.js"></script>
 <script src="js/effects.js"></script>
+<script src="js/backgrounds.js"></script>
 <script src="js/scene.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>
