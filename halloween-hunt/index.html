@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎃 Halloween: Find the Items</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div class="hud" id="hud">
+  <div class="pill">Found: <b><span id="found">0</span> / <span id="total">0</span></b></div>
+  <div class="pill">Time: <b><span id="timer">30</span>s</b></div>
+  <div class="pill">Score: <b><span id="score">0</span></b></div>
+  <div class="pill">Lives: <span id="lives" class="pumpkin-life">🎃🎃🎃</span></div>
+</div>
+
+<!-- Start Screen -->
+<div class="overlay" id="startScreen">
+  <h1 class="game-title">Halloween Hunt</h1>
+  <p class="subtitle">Click on the spooky items. Ordinary ones crumble and cost you points!</p>
+  <p class="rules">
+    Find <b class="good">+10 points</b> for every Halloween item.<br>
+    Clicking an ordinary object costs <b class="bad">−5 points</b> and <b class="bad">−1 life</b>.<br>
+    Items can hide behind each other — look carefully!
+  </p>
+  <div class="target-list" id="previewList"></div>
+  <button class="btn" id="startBtn">Start the Hunt</button>
+</div>
+
+<!-- End Screen -->
+<div class="overlay hidden" id="endScreen">
+  <h2 id="endTitle">Time's up!</h2>
+  <div class="stats-final" id="endStats"></div>
+  <button class="btn" id="restartBtn">Play Again</button>
+</div>
+
+<footer class="site-footer">Made with 🎃 for a spooky Halloween</footer>
+
+<script src="js/config.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/drawing.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
